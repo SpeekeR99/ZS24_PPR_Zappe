@@ -10,4 +10,6 @@ add_executable(
     src/merge_sort.cpp
     src/statistics.h
     src/statistics.cpp
+    src/dataloader.h
+    src/dataloader.cpp
 )
