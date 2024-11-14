@@ -8,6 +8,8 @@ add_executable(
     src/main.cpp
     src/merge_sort.h
     src/merge_sort.cpp
+    src/bitonic_sort.h
+    src/bitonic_sort.cpp
     src/statistics.h
     src/statistics.cpp
     src/dataloader.h
