@@ -15,4 +15,4 @@ add_executable(
     src/statistics.cpp
     src/dataloader.h
     src/dataloader.cpp
-)
+        src/utils.h)

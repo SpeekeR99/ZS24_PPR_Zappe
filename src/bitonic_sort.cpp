@@ -10,7 +10,7 @@ void bitonic_merge(std::vector<double>& arr, size_t low, size_t count) {
     }
 }
 
-void my_bitonic_sort(std::vector<double>& arr, double& sum, double& sum_sq) {
+void my_bitonic_sort(std::vector<double>& arr) {
     size_t original_size = arr.size();
 
     /* Calculate the next power of 2 greater than or equal to the array size */
@@ -32,10 +32,4 @@ void my_bitonic_sort(std::vector<double>& arr, double& sum, double& sum_sq) {
 
     /* Restore the array size (remove padding) */
     arr.resize(original_size);
-
-    /* Calculate the sum and sum of squares of the sorted array */
-    for (double i : arr) {
-        sum += i;
-        sum_sq += i * i;
-    }
 }
