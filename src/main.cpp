@@ -36,8 +36,8 @@ int main() {
 
         start = std::chrono::high_resolution_clock::now();
 
-//        my_bitonic_sort((*arr), sum, sum_sq);
         my_merge_sort((*arr), sum, sum_sq);
+//        my_bitonic_sort((*arr), sum, sum_sq);
 
         std::cout << ((std::is_sorted((*arr).begin(), (*arr).end())) ? "Sorted" : "ERR: NOT SORTED!!!") << std::endl;
 
