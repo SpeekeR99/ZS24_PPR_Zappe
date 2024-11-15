@@ -5,12 +5,8 @@ void merge(std::vector<double> &arr, size_t left, size_t mid, size_t right) {
     size_t n2 = right - mid;
 
     /* Temporary arrays to hold the left and right halves */
-    std::vector<double> leftArr(n1);
-    for (size_t i = 0; i < n1; i++)
-        leftArr[i] = arr[left + i];
-    std::vector<double> rightArr(n2);
-    for (size_t i = 0; i < n2; i++)
-        rightArr[i] = arr[mid + 1 + i];
+    std::vector<double> leftArr(arr.begin() + static_cast<int>(left), arr.begin() + static_cast<int>(mid) + 1);
+    std::vector<double> rightArr(arr.begin() + static_cast<int>(mid) + 1, arr.begin() + static_cast<int>(right) + 1);
 
     /* Actual merge */
     size_t i = 0, j = 0, k = left;
@@ -24,7 +20,7 @@ void merge(std::vector<double> &arr, size_t left, size_t mid, size_t right) {
         arr[k++] = rightArr[j++];
 }
 
-void my_merge_sort(std::vector<double> &arr) {
+void merge_sort(std::vector<double> &arr) {
     for (size_t size = 1; size < arr.size(); size *= 2) {
         #pragma omp parallel for default(none) shared(arr, size)
         for (size_t left = 0; left < arr.size(); left += 2 * size) {

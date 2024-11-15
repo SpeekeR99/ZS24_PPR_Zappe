@@ -20,4 +20,4 @@ void merge(std::vector<double> &arr, size_t left, size_t mid, size_t right);
  * Sorts the array and calculates the sum and sum of squares of the array elements
  * @param arr Array to be sorted
  */
-void my_merge_sort(std::vector<double> &arr);
+void merge_sort(std::vector<double> &arr);
