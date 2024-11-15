@@ -21,13 +21,15 @@ void merge(std::vector<double> &arr, size_t left, size_t mid, size_t right) {
 }
 
 void merge_sort(std::vector<double> &arr) {
+    /* For each subarray size, basically a stride (bottom up approach) */
     for (size_t size = 1; size < arr.size(); size *= 2) {
+        /* For each pair of sub-arrays -- left and right -- sort and merge them */
         #pragma omp parallel for default(none) shared(arr, size)
         for (size_t left = 0; left < arr.size(); left += 2 * size) {
             size_t mid = std::min(left + size - 1, arr.size() - 1);
             size_t right = std::min(left + 2 * size - 1, arr.size() - 1);
 
-            /* Merge */
+            /* Sort and merge the pair */
             merge(arr, left, mid, right);
         }
     }
