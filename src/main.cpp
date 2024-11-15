@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include "dataloader.h"
-#include "statistics.h"
+#include "computations.h"
 
 int main() {
     std::string filepath = "data/ACC_001.csv";
@@ -18,9 +18,13 @@ int main() {
     std::cout << "Loaded " << data.z.size() << " Z data" << std::endl << std::endl;
 
     std::string policy_p = "par";
-    std::string policy_v = "seq";
+    std::string policy_v = "vec";
 
+    /* Set the policy */
     policy_p == "ser" ? omp_set_num_threads(1) : omp_set_num_threads(omp_get_max_threads());
+    seq_comp seq{};
+    vec_comp vec{};
+    computations &comp = policy_v == "seq" ? reinterpret_cast<computations&>(seq) : reinterpret_cast<computations&>(vec);
 
     for (size_t i = 0; i < 3; i++) {
         std::vector<double> *arr;
@@ -37,8 +41,8 @@ int main() {
 
         start = std::chrono::high_resolution_clock::now();
 
-        auto mad = compute_mad(*arr);
-        auto coef_var = compute_coef_var(*arr);
+        auto mad = comp.compute_mad(*arr);
+        auto coef_var = comp.compute_coef_var(*arr);
 
         end = std::chrono::high_resolution_clock::now();
 

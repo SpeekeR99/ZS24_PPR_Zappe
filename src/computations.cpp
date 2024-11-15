@@ -1,9 +1,13 @@
-#include "statistics.h"
+#include "computations.h"
 
-void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) {
-    sum = 0;
-    sum_sq = 0;
+void seq_comp::compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) const {
+    /* Calculate the absolute differences from the median */
+    #pragma omp parallel for default(none) shared(arr, diff, median)
+    for (size_t i = 0; i < arr.size(); i++)
+        diff[i] = std::abs(arr[i] - median);
+}
 
+void seq_comp::compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) const {
     /* Prepare for parallelism */
     auto max_num_threads = static_cast<size_t>(omp_get_max_threads());
     auto chunk_size = arr.size() / max_num_threads;
@@ -31,7 +35,38 @@ void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) {
     }
 }
 
-double compute_mad(std::vector<double> &arr) {
+void vec_comp::compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) const {
+    size_t n = arr.size();
+
+    /* Load the median into an AVX2 register */
+    __m256d median_vec = _mm256_set1_pd(median);
+
+    /* Process 4 doubles at a time */
+    #pragma omp parallel for default(none) shared(arr, diff, median_vec, n)
+    for (size_t i = 0; i <= n - 4; i += 4) {
+        /* Load 4 doubles into an AVX2 register */
+        __m256d arr_vec = _mm256_loadu_pd(&arr[i]);
+
+        /* Subtract the median from the array */
+        __m256d diff_vec = _mm256_sub_pd(arr_vec, median_vec);
+        /* Absolute value */
+        __m256d sign_bit = _mm256_set1_pd(-0.0);
+        diff_vec = _mm256_andnot_pd(sign_bit, diff_vec);
+
+        /* Store the result */
+        _mm256_storeu_pd(&diff[i], diff_vec);
+    }
+
+    /* Handle the remaining elements (if array size is not a multiple of 4) */
+    for (size_t i = n - n % 4; i < n; i++)
+        diff[i] = std::abs(arr[i] - median);
+}
+
+void vec_comp::compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) const {
+    /* TODO: implement this */
+}
+
+double computations::compute_mad(std::vector<double> &arr) const {
     /* Sort the array for median calculation */
     merge_sort(arr);
 
@@ -42,9 +77,7 @@ double compute_mad(std::vector<double> &arr) {
 
     /* Calculate the absolute differences from the median */
     std::vector<double> diff(arr.size());
-    #pragma omp parallel for default(none) shared(arr, diff, median)
-    for (size_t i = 0; i < arr.size(); i++)
-        diff[i] = std::abs(arr[i] - median);
+    this->compute_abs_diff(arr, median, diff);
 
     /*
      * Since the array is "half-sorted", we can abuse it:
@@ -62,12 +95,12 @@ double compute_mad(std::vector<double> &arr) {
     return (arr.size() & 1) ? curr : (prev + curr) / 2.0;
 }
 
-double compute_coef_var(const std::vector<double> &arr) {
+double computations::compute_coef_var(const std::vector<double> &arr) const {
     /* Using the formula: sqrt((sum of squares - sum^2 / n) / n) / (sum / n) */
     size_t n = arr.size();
 
     double sum = 0, sum_sq = 0;
-    compute_sums(arr, sum, sum_sq);
+    this->compute_sums(arr, sum, sum_sq);
 
     return std::sqrt((sum_sq - sum * sum / n) / n) / (sum / n);
 }
