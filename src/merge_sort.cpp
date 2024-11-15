@@ -14,29 +14,14 @@ void merge(std::vector<double> &arr, size_t left, size_t mid, size_t right) {
 
     /* Actual merge */
     size_t i = 0, j = 0, k = left;
-    while (i < n1 && j < n2) {
-        if (leftArr[i] <= rightArr[j]) {
-            arr[k] = leftArr[i];
-            i++;
-        } else {
-            arr[k] = rightArr[j];
-            j++;
-        }
-        k++;
-    }
+    while (i < n1 && j < n2)
+        arr[k++] = leftArr[i] <= rightArr[j] ? leftArr[i++] : rightArr[j++];
 
     /* Copy any remaining elements from either of the halves */
-    while (i < n1) {
-        arr[k] = leftArr[i];
-        i++;
-        k++;
-    }
-
-    while (j < n2) {
-        arr[k] = rightArr[j];
-        j++;
-        k++;
-    }
+    while (i < n1)
+        arr[k++] = leftArr[i++];
+    while (j < n2)
+        arr[k++] = rightArr[j++];
 }
 
 void my_merge_sort(std::vector<double> &arr) {

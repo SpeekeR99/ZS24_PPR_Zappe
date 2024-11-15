@@ -3,16 +3,15 @@
 void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) {
     sum = 0;
     sum_sq = 0;
-    auto chunk_size = arr.size() / omp_get_max_threads();
-    std::vector<double> sums(omp_get_max_threads(), 0);
-    std::vector<double> sums_sq(omp_get_max_threads(), 0);
+    auto max_num_threads = static_cast<size_t>(omp_get_max_threads());
+    auto chunk_size = arr.size() / max_num_threads;
+    std::vector<double> sums(max_num_threads, 0);
+    std::vector<double> sums_sq(max_num_threads, 0);
 
-    #pragma omp parallel for default(none) shared(arr, sums, sums_sq, chunk_size)
-    for (size_t i = 0; i < omp_get_max_threads(); i++) {
+    #pragma omp parallel for default(none) shared(arr, sums, sums_sq, max_num_threads, chunk_size)
+    for (size_t i = 0; i < max_num_threads; i++) {
         size_t start = i * chunk_size;
-        size_t end = (i + 1) * chunk_size;
-        if (i == omp_get_max_threads() - 1)
-            end = arr.size();
+        size_t end = (i == max_num_threads - 1) ? arr.size() : (i + 1) * chunk_size;
 
         for (size_t j = start; j < end; j++) {
             sums[i] += arr[j];
@@ -20,7 +19,7 @@ void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) {
         }
     }
 
-    for (size_t i = 0; i < omp_get_max_threads(); i++) {
+    for (size_t i = 0; i < max_num_threads; i++) {
         sum += sums[i];
         sum_sq += sums_sq[i];
     }
@@ -43,16 +42,10 @@ double compute_mad(std::vector<double> &arr) {
     double prev = 0, curr = 0;
     for (size_t i = 0; i <= diff.size() / 2; i++) {
         prev = curr;
-        if (diff[left] >= diff[right])
-            curr = diff[right++];
-        else
-            curr = diff[left--];
+        curr = diff[left] >= diff[right] ? diff[right++] : diff[left--];
     }
 
-    if (arr.size() & 1)  /* Odd number */
-        return curr;
-    else
-        return (prev + curr) / 2.0;
+    return (arr.size() & 1) ? curr : (prev + curr) / 2.0;
 }
 
 double compute_coef_var(const std::vector<double> &arr) {
