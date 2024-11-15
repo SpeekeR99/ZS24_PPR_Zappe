@@ -17,7 +17,13 @@ int main() {
     std::cout << "Loaded " << data.y.size() << " Y data" << std::endl;
     std::cout << "Loaded " << data.z.size() << " Z data" << std::endl << std::endl;
 
-    auto policy = std::execution::seq;
+    std::string policy_p = "par";
+    std::string policy_v = "seq";
+
+    if (policy_p == "ser")
+        omp_set_num_threads(1);
+    else
+        omp_set_num_threads(omp_get_max_threads());
 
     for (size_t i = 0; i < 3; i++) {
         std::vector<double> *arr;
@@ -34,8 +40,8 @@ int main() {
 
         start = std::chrono::high_resolution_clock::now();
 
-        auto mad = compute_mad(*arr, policy);
-        auto coef_var = compute_coef_var(*arr, policy);
+        auto mad = compute_mad(*arr);
+        auto coef_var = compute_coef_var(*arr);
 
         end = std::chrono::high_resolution_clock::now();
 
