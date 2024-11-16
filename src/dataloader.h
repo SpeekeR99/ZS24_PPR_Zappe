@@ -18,8 +18,11 @@ constexpr size_t MB = 1 << 20;
  * Contains three vectors for X, Y and Z data
  */
 struct patient_data {
+    /** X data */
     std::vector<double> x;
+    /** Y data */
     std::vector<double> y;
+    /** Z data */
     std::vector<double> z;
 };
 
