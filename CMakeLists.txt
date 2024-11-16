@@ -7,6 +7,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -fopenm
 add_executable(
     ZS24_PPR_Zappe
     src/main.cpp
+    src/arg_parser.h
+    src/arg_parser.cpp
     src/dataloader.h
     src/dataloader.cpp
     src/merge_sort.h

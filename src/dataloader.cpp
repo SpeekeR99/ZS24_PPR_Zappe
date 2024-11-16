@@ -121,7 +121,7 @@ void load_data_parallel(const std::string &filepath, patient_data &data) {
     /* Parse per lines */
     std::vector<std::string_view> lines;
     size_t startIdx = 0;  /* Start of the line */
-    for (size_t i = 0; i < fileSize; ++i) {
+    for (size_t i = 0; i < fileSize; i++) {
         if (buffer[i] == '\n') {
             lines.emplace_back(buffer + startIdx, i - startIdx);
             startIdx = i + 1;  /* Skip the newline */
