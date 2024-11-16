@@ -5,7 +5,7 @@
 
 int main() {
     std::string policy_p = "par";
-    std::string policy_v = "seq";
+    std::string policy_v = "vec";
 
     /* Set the policy */
     policy_p == "ser" ? omp_set_num_threads(1) : omp_set_num_threads(omp_get_max_threads());
