@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#include <omp.h>
+
 /** Max byte value */
 constexpr size_t max_byte_value = 256;
 /** 1 KB */
@@ -30,8 +32,15 @@ void load_data(const std::string &filepath, patient_data &data);
 
 /**
  * Loads data from a file super fast
- * Uses a large buffer and minimal memory allocations
+ * Uses a large buffer and resizing of vectors and direct indexing
  * @param filepath Path to the file
  * @param data Data structure to store the loaded data
  */
 void load_data_super_fast(const std::string &filepath, patient_data &data);
+
+/**
+ * Loads data from a file in parallel
+ * @param filepath Path to the file
+ * @param data Data structure to store the loaded data
+ */
+void load_data_parallel(const std::string &filepath, patient_data &data);
