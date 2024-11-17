@@ -29,9 +29,6 @@ int main(int argc, char **argv) {
     policy_p == "ser" ? omp_set_num_threads(1) : omp_set_num_threads(omp_get_max_threads());
 
     /* Choose the policy for computations */
-    seq_comp seq{};
-    vec_comp vec{};
-    auto &comp = policy_v == "seq" ? reinterpret_cast<computations&>(seq) : reinterpret_cast<computations&>(vec);
     std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ") << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl << std::endl;
 
     /* Load the data */
@@ -70,8 +67,17 @@ int main(int argc, char **argv) {
         start = std::chrono::high_resolution_clock::now();  /* Time measurement */
 
         /* Actual computation */
-        auto mad = comp.compute_mad(vectors[i]);
-        auto coef_var = comp.compute_coef_var(vectors[i]);
+        double mad, coef_var;
+        /* TODO: couldn't this be better? Decide once based on the policy before the for loop */
+        if (policy_v == "seq") {
+            seq_comp comp;
+            mad = comp.compute_mad(vectors[i]);
+            coef_var = comp.compute_coef_var(vectors[i]);
+        } else {
+            vec_comp comp;
+            mad = comp.compute_mad(vectors[i]);
+            coef_var = comp.compute_coef_var(vectors[i]);
+        }
 
         end = std::chrono::high_resolution_clock::now();  /* Time measurement */
         elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
