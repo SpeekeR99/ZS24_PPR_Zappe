@@ -7,7 +7,9 @@ constexpr size_t KB = 1 << 10;
 /** 1 MB */
 constexpr size_t MB = KB << 10;
 
-/* TODO: Maybe user can choose to use floats instead of double precision ? */
-
-/** Decimal type, can be changed by user to float */
+/** Decimal type, can be changed by user to float, by default it is double */
+#ifdef _USE_FLOAT
+using decimal = float;
+#else
 using decimal = double;
+#endif

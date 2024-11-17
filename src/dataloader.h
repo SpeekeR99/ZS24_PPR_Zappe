@@ -15,11 +15,11 @@
  */
 struct patient_data {
     /** X data */
-    std::vector<double> x;
+    std::vector<decimal> x;
     /** Y data */
-    std::vector<double> y;
+    std::vector<decimal> y;
     /** Z data */
-    std::vector<double> z;
+    std::vector<decimal> z;
 };
 
 /**

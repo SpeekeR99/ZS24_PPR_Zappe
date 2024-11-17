@@ -3,6 +3,7 @@ project(ZS24_PPR_Zappe)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -fopenmp -mavx2")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -fopenmp -mavx2 -D_USE_FLOAT")
 
 add_executable(
     ZS24_PPR_Zappe

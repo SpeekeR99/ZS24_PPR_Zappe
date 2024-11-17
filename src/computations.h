@@ -9,6 +9,7 @@
 #include <immintrin.h>
 
 #include "merge_sort.h"
+#include "utils.h"
 
 /* This, and the arg parser, are the only files where I found OOP to be useful */
 
@@ -29,7 +30,7 @@ public:
      * @param arr Any array -- unsorted
      * @return Mean absolute deviation
      */
-    [[nodiscard]] double compute_mad(std::vector<double> &arr) {
+    [[nodiscard]] decimal compute_mad(std::vector<decimal> &arr) {
         /* Sort the array for median calculation */
         merge_sort(arr);
 
@@ -39,7 +40,7 @@ public:
         const auto median = (arr[arr.size() / 2] + arr[(arr.size() - 1) / 2]) / 2.0;
 
         /* Calculate the absolute differences from the median */
-        std::vector<double> diff(arr.size());
+        std::vector<decimal> diff(arr.size());
         static_cast<derived *>(this)->compute_abs_diff(arr, median, diff);
 
         /*
@@ -49,7 +50,7 @@ public:
          * We always pick the smaller of the two, move the corresponding pointer until we reach the new median
          */
         size_t left = diff.size() / 2 - 1, right = diff.size() / 2;
-        double prev = 0, curr = 0;
+        decimal prev = 0, curr = 0;
         for (size_t i = 0; i <= diff.size() / 2; i++) {
             prev = curr;
             curr = diff[left] >= diff[right] ? diff[right++] : diff[left--];
@@ -64,11 +65,11 @@ public:
      * @param arr Array
      * @return Coefficient of variance
      */
-    [[nodiscard]] double compute_coef_var(const std::vector<double> &arr) {
+    [[nodiscard]] decimal compute_coef_var(const std::vector<decimal> &arr) {
         /* Using the formula: sqrt((sum of squares - sum^2 / n) / n) / (sum / n) */
         const size_t n = arr.size();
 
-        double sum = 0, sum_sq = 0;
+        decimal sum = 0, sum_sq = 0;
         static_cast<derived *>(this)->compute_sums(arr, sum, sum_sq);
 
         return std::sqrt((sum_sq - sum * sum / n) / n) / (sum / n);
@@ -89,7 +90,7 @@ public:
      * @param median Median of the array
      * @return Absolute difference between each element and the median
      */
-    static void compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) ;
+    static void compute_abs_diff(const std::vector<decimal> &arr, decimal median, std::vector<decimal> &diff) ;
 
     /**
      * Compute the sum and sum of squares of the array elements in a sequential manner
@@ -98,7 +99,7 @@ public:
      * @param sum Sum of the array elements
      * @param sum_sq Sum of squares of the array elements
      */
-    static void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) ;
+    static void compute_sums(const std::vector<decimal> &arr, decimal &sum, decimal &sum_sq) ;
 };
 
 /**
@@ -115,7 +116,7 @@ public:
      * @param median Median of the array
      * @return Absolute difference between each element and the median
      */
-    static void compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) ;
+    static void compute_abs_diff(const std::vector<decimal> &arr, decimal median, std::vector<decimal> &diff) ;
 
     /**
      * Compute the sum and sum of squares of the array elements in a vectorized manner
@@ -124,5 +125,5 @@ public:
      * @param sum Sum of the array elements
      * @param sum_sq Sum of squares of the array elements
      */
-    static void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) ;
+    static void compute_sums(const std::vector<decimal> &arr, decimal &sum, decimal &sum_sq) ;
 };

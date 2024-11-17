@@ -1,12 +1,12 @@
 #include "merge_sort.h"
 
-void merge(std::vector<double> &arr, const size_t left, const size_t mid, const size_t right) {
+void merge(std::vector<decimal> &arr, const size_t left, const size_t mid, const size_t right) {
     const size_t n1 = mid - left + 1;
     const size_t n2 = right - mid;
 
     /* Temporary arrays to hold the left and right halves */
-    std::vector<double> leftArr(arr.begin() + static_cast<int>(left), arr.begin() + static_cast<int>(mid) + 1);
-    std::vector<double> rightArr(arr.begin() + static_cast<int>(mid) + 1, arr.begin() + static_cast<int>(right) + 1);
+    std::vector<decimal> leftArr(arr.begin() + static_cast<int>(left), arr.begin() + static_cast<int>(mid) + 1);
+    std::vector<decimal> rightArr(arr.begin() + static_cast<int>(mid) + 1, arr.begin() + static_cast<int>(right) + 1);
 
     /* Actual merge */
     size_t i = 0, j = 0, k = left;
@@ -20,7 +20,7 @@ void merge(std::vector<double> &arr, const size_t left, const size_t mid, const 
         arr[k++] = rightArr[j++];
 }
 
-void merge_sort(std::vector<double> &arr) {
+void merge_sort(std::vector<decimal> &arr) {
     /* For each subarray size, basically a stride (bottom up approach) */
     for (size_t size = 1; size < arr.size(); size *= 2) {
         /* For each pair of sub-arrays -- left and right -- sort and merge them */

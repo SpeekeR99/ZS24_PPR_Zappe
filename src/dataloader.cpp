@@ -19,12 +19,20 @@ void load_data_fast(const std::string& filepath, patient_data &data) {
 
     /* Read the data */
     char datetime[max_byte_value];
-    double x, y, z;
+    decimal x, y, z;
+    #ifndef _USE_FLOAT
     while(fscanf(in_fp, "%[^,],%lf,%lf,%lf\n", datetime, &x, &y, &z) != EOF) {
         data.x.push_back(x);
         data.y.push_back(y);
         data.z.push_back(z);
     }
+    #else
+    while(fscanf(in_fp, "%[^,],%f,%f,%f\n", datetime, &x, &y, &z) != EOF) {
+        data.x.push_back(x);
+        data.y.push_back(y);
+        data.z.push_back(z);
+    }
+    #endif
 
     /* Close the file */
     fclose(in_fp);
@@ -58,7 +66,7 @@ void load_data_super_fast(const std::string& filepath, patient_data &data) {
     size_t index = 0;
 
     /* Read the data in large chunks */
-    double x, y, z;
+    decimal x, y, z;
     while (fgets(buffer, sizeof(buffer), in_fp)) {
         char *line_ptr = buffer;
 

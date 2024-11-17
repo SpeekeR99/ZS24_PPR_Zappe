@@ -40,7 +40,9 @@ int main(int argc, char **argv) {
     std::variant<seq_comp, vec_comp> comp = seq_comp();
     if (policy_v == "vec")
         comp = vec_comp();
-    std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ") << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl << std::endl;
+    std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ")
+              << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl;
+    std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
 
     /* Load the data */
     patient_data data;
@@ -69,7 +71,7 @@ int main(int argc, char **argv) {
     std::cout << "Loaded " << data.z.size() << " Z data" << std::endl << std::endl;
 
     /* Compute the mean absolute deviation and coefficient of variation for X, Y and Z respectively */
-    std::vector<std::vector<double>> vectors = {data.x, data.y, data.z};
+    std::vector<std::vector<decimal>> vectors = {data.x, data.y, data.z};
     std::vector<std::string> labels = {"X data:", "Y data:", "Z data:"};
     /* For each data vector */
     for (size_t i = 0; i < vectors.size(); i++) {
@@ -81,10 +83,10 @@ int main(int argc, char **argv) {
          * Actual computation -- uses the variant and the visitor pattern
          * (mimics dynamic polymorphism, but with no runtime overhead)
          */
-        auto mad = std::visit([&](auto &&comp) -> double {
+        auto mad = std::visit([&](auto &&comp) -> decimal {
             return comp.compute_mad(vectors[i]);
         }, comp);
-        auto coef_var = std::visit([&](auto &&comp) -> double {
+        auto coef_var = std::visit([&](auto &&comp) -> decimal {
             return comp.compute_coef_var(vectors[i]);
         }, comp);
 
