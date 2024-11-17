@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cstring>
 
 #include <omp.h>
 
@@ -27,14 +28,14 @@ struct patient_data {
 };
 
 /**
- * Load data from a file
+ * Load data from a file using the standard ANSI C I/O functions (fopen, fscanf, fclose)
  * @param filepath Path to the file
  * @param data Data structure to store the loaded data
  */
-void load_data(const std::string &filepath, patient_data &data);
+void load_data_fast(const std::string &filepath, patient_data &data);
 
 /**
- * Loads data from a file super fast
+ * Loads data from a file super fast using the standard ANSI C I/O functions (fopen, fscanf, fclose)
  * Uses a large buffer and resizing of vectors and direct indexing
  * @param filepath Path to the file
  * @param data Data structure to store the loaded data
@@ -42,7 +43,8 @@ void load_data(const std::string &filepath, patient_data &data);
 void load_data_super_fast(const std::string &filepath, patient_data &data);
 
 /**
- * Loads data from a file in parallel
+ * Loads data from a file in parallel using the standard ANSI C I/O functions (fopen, fscanf, fclose)
+ * Also uses ANSI C string functions (strtok, strcpy) and atof, because for some reason strtod is slow in parallel
  * @param filepath Path to the file
  * @param data Data structure to store the loaded data
  */

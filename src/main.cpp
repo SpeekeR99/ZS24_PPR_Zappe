@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     /* Choose the policy for computations */
     seq_comp seq{};
     vec_comp vec{};
-    computations &comp = policy_v == "seq" ? reinterpret_cast<computations&>(seq) : reinterpret_cast<computations&>(vec);
+    auto &comp = policy_v == "seq" ? reinterpret_cast<computations&>(seq) : reinterpret_cast<computations&>(vec);
     std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ") << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl << std::endl;
 
     /* Load the data */
@@ -40,7 +40,16 @@ int main(int argc, char **argv) {
 
     auto start = std::chrono::high_resolution_clock::now();  /* Time measurement */
 
-    load_data_parallel(filepath, data);
+    /*
+     * Try catch here is because load_data_parallel() loads the whole file into memory
+     * and if the file is too big, it may cause a memory error -- if that happens, my
+     * older function load_data_super_fast() is called, which is slower, but safer (I/O bound)
+     */
+    try {
+        load_data_parallel(filepath, data);
+    } catch (const std::exception &e) {
+        load_data_super_fast(filepath, data);
+    }
 
     auto end = std::chrono::high_resolution_clock::now();  /* Time measurement */
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

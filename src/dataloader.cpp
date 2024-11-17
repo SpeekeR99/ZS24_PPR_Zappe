@@ -1,6 +1,6 @@
 #include "dataloader.h"
 
-void load_data(const std::string& filepath, patient_data &data) {
+void load_data_fast(const std::string& filepath, patient_data &data) {
     /* Open the file */
     FILE *in_fp = fopen(filepath.c_str(), "r");
     if (!in_fp) {
@@ -110,21 +110,21 @@ void load_data_parallel(const std::string &filepath, patient_data &data) {
 
     /* Get the file size */
     fseek(in_fp, 0, SEEK_END);
-    size_t fileSize = ftell(in_fp);
+    size_t file_size = ftell(in_fp);
     fseek(in_fp, 0, SEEK_SET);
 
     /* Read the file into a buffer into memory (RAM) */
-    char *buffer = new char[fileSize];
-    fread(buffer, 1, fileSize, in_fp);
+    char *buffer = new char[file_size];
+    fread(buffer, 1, file_size, in_fp);
     fclose(in_fp);
 
     /* Parse per lines */
     std::vector<std::string_view> lines;
-    size_t startIdx = 0;  /* Start of the line */
-    for (size_t i = 0; i < fileSize; i++) {
+    size_t start_index = 0;  /* Start of the line */
+    for (size_t i = 0; i < file_size; i++) {
         if (buffer[i] == '\n') {
-            lines.emplace_back(buffer + startIdx, i - startIdx);
-            startIdx = i + 1;  /* Skip the newline */
+            lines.emplace_back(buffer + start_index, i - start_index);
+            start_index = i + 1;  /* Skip the newline */
         }
     }
 
@@ -145,34 +145,34 @@ void load_data_parallel(const std::string &filepath, patient_data &data) {
     auto max_num_threads = static_cast<size_t>(omp_get_max_threads());
     size_t chunk_size = num_lines / max_num_threads;
 
-//    #pragma omp parallel for
+    #pragma omp parallel for default(none) shared(lines, data, num_lines, max_num_threads, chunk_size)
     for (size_t i = 0; i < max_num_threads; i++) {
         size_t start = i * chunk_size;
         /* Final thread may have to handle a little more elements */
         size_t end = (i == max_num_threads - 1) ? num_lines : (i + 1) * chunk_size;
 
+        char line[max_byte_value];
         /* Parse the lines */
         for (size_t j = start; j < end; j++) {
-            char *line_ptr = const_cast<char*>(lines[j].data());
+            strncpy(line, lines[j].data(), lines[j].size());
+            line[lines[j].size()] = '\0';  /* Null-terminate for strtok */
 
-            /* Find the end of the datetime and move to the numeric data */
-            while (*line_ptr && *line_ptr != ',')
-                line_ptr++;
-            line_ptr++; /* Skip comma */
+            /* Split the line manually */
+            strtok(line, ",");  /* Skip first token -- datetime */
 
-            /* Parse x, y, z values directly */
-            double x = std::strtod(line_ptr, &line_ptr);
-            line_ptr++; /* Skip comma */
+            /*
+             * Parse x, y, z values directly
+             * When using strtod or std::strtod here, the parallel version gets progressively
+             * slower with the number of threads used -- I have no idea why, but atof saved the day
+             */
+            char *token = strtok(nullptr, ",");
+            data.x[j] = atof(token);
 
-            double y = std::strtod(line_ptr, &line_ptr);
-            line_ptr++; /* Skip comma */
+            token = strtok(nullptr, ",");
+            data.y[j] = atof(token);
 
-            double z = std::strtod(line_ptr, &line_ptr);
-
-            /* Store the values */
-            data.x[j] = x;
-            data.y[j] = y;
-            data.z[j] = z;
+            token = strtok(nullptr, ",");
+            data.z[j] = atof(token);
         }
     }
 
