@@ -1,8 +1,11 @@
 #include <iostream>
 #include <chrono>
+#include <variant>
 #include "arg_parser.h"
 #include "dataloader.h"
 #include "computations.h"
+
+using seq_vec_variant = std::variant<seq_comp, vec_comp>;
 
 int main(int argc, char **argv) {
     /* Parse the arguments */
@@ -29,6 +32,9 @@ int main(int argc, char **argv) {
     policy_p == "ser" ? omp_set_num_threads(1) : omp_set_num_threads(omp_get_max_threads());
 
     /* Choose the policy for computations */
+    seq_vec_variant comp = seq_comp();
+    if (policy_v == "vec")
+        comp = vec_comp();
     std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ") << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl << std::endl;
 
     /* Load the data */
@@ -66,18 +72,16 @@ int main(int argc, char **argv) {
 
         start = std::chrono::high_resolution_clock::now();  /* Time measurement */
 
-        /* Actual computation */
-        double mad, coef_var;
-        /* TODO: couldn't this be better? Decide once based on the policy before the for loop */
-        if (policy_v == "seq") {
-            seq_comp comp;
-            mad = comp.compute_mad(vectors[i]);
-            coef_var = comp.compute_coef_var(vectors[i]);
-        } else {
-            vec_comp comp;
-            mad = comp.compute_mad(vectors[i]);
-            coef_var = comp.compute_coef_var(vectors[i]);
-        }
+        /*
+         * Actual computation -- uses the variant and the visitor pattern
+         * (mimics dynamic polymorphism, but with no runtime overhead)
+         */
+        auto mad = std::visit([&](auto &&comp) -> double {
+            return comp.compute_mad(vectors[i]);
+        }, comp);
+        auto coef_var = std::visit([&](auto &&comp) -> double {
+            return comp.compute_coef_var(vectors[i]);
+        }, comp);
 
         end = std::chrono::high_resolution_clock::now();  /* Time measurement */
         elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

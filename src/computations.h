@@ -89,7 +89,7 @@ public:
      * @param median Median of the array
      * @return Absolute difference between each element and the median
      */
-    void compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) const;
+    static void compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) ;
 
     /**
      * Compute the sum and sum of squares of the array elements in a sequential manner
@@ -98,7 +98,7 @@ public:
      * @param sum Sum of the array elements
      * @param sum_sq Sum of squares of the array elements
      */
-    void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) const;
+    static void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) ;
 };
 
 /**
@@ -115,7 +115,7 @@ public:
      * @param median Median of the array
      * @return Absolute difference between each element and the median
      */
-    void compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) const;
+    static void compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) ;
 
     /**
      * Compute the sum and sum of squares of the array elements in a vectorized manner
@@ -124,5 +124,5 @@ public:
      * @param sum Sum of the array elements
      * @param sum_sq Sum of squares of the array elements
      */
-    void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) const;
+    static void compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) ;
 };

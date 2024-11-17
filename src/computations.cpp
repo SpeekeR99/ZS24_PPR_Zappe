@@ -1,13 +1,13 @@
 #include "computations.h"
 
-void seq_comp::compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) const {
+void seq_comp::compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) {
     /* Calculate the absolute differences from the median */
     #pragma omp parallel for default(none) shared(arr, diff, median)
     for (size_t i = 0; i < arr.size(); i++)
         diff[i] = std::abs(arr[i] - median);
 }
 
-void seq_comp::compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) const {
+void seq_comp::compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) {
     /* Prepare for parallelism */
     auto max_num_threads = static_cast<size_t>(omp_get_max_threads());
     auto chunk_size = arr.size() / max_num_threads;
@@ -35,7 +35,7 @@ void seq_comp::compute_sums(const std::vector<double> &arr, double &sum, double 
     }
 }
 
-void vec_comp::compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) const {
+void vec_comp::compute_abs_diff(const std::vector<double> &arr, double median, std::vector<double> &diff) {
     size_t n = arr.size();
 
     /* Load the median into an AVX2 register */
@@ -62,7 +62,7 @@ void vec_comp::compute_abs_diff(const std::vector<double> &arr, double median, s
         diff[i] = std::abs(arr[i] - median);
 }
 
-void vec_comp::compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) const {
+void vec_comp::compute_sums(const std::vector<double> &arr, double &sum, double &sum_sq) {
     size_t n = arr.size();
 
     /* Prepare for parallelism */
