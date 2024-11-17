@@ -10,7 +10,7 @@
 
 #include "merge_sort.h"
 
-/* This is the only file where I found OOP to be useful */
+/* This, and the arg parser, are the only files where I found OOP to be useful */
 
 /**
  * Abstract class for computations
@@ -36,7 +36,7 @@ public:
         std::cout << (std::is_sorted(arr.begin(), arr.end()) ? "Sorted" : "Not sorted") << std::endl;
 
         /* Get the median */
-        auto median = (arr[arr.size() / 2] + arr[(arr.size() - 1) / 2]) / 2.0;
+        const auto median = (arr[arr.size() / 2] + arr[(arr.size() - 1) / 2]) / 2.0;
 
         /* Calculate the absolute differences from the median */
         std::vector<double> diff(arr.size());
@@ -66,7 +66,7 @@ public:
      */
     [[nodiscard]] double compute_coef_var(const std::vector<double> &arr) {
         /* Using the formula: sqrt((sum of squares - sum^2 / n) / n) / (sum / n) */
-        size_t n = arr.size();
+        const size_t n = arr.size();
 
         double sum = 0, sum_sq = 0;
         static_cast<derived *>(this)->compute_sums(arr, sum, sum_sq);

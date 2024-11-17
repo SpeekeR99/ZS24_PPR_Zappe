@@ -58,6 +58,7 @@ void load_data_super_fast(const std::string& filepath, patient_data &data) {
     size_t index = 0;
 
     /* Read the data in large chunks */
+    double x, y, z;
     while (fgets(buffer, sizeof(buffer), in_fp)) {
         char *line_ptr = buffer;
 
@@ -67,13 +68,13 @@ void load_data_super_fast(const std::string& filepath, patient_data &data) {
         line_ptr++; /* Skip comma */
 
         /* Parse x, y, z values directly */
-        double x = std::strtod(line_ptr, &line_ptr);
+        x = std::strtod(line_ptr, &line_ptr);
         line_ptr++; /* Skip comma */
 
-        double y = std::strtod(line_ptr, &line_ptr);
+        y = std::strtod(line_ptr, &line_ptr);
         line_ptr++; /* Skip comma */
 
-        double z = std::strtod(line_ptr, &line_ptr);
+        z = std::strtod(line_ptr, &line_ptr);
 
         /* Ensure we have enough space */
         if (index >= data.x.size()) {
@@ -110,7 +111,7 @@ void load_data_parallel(const std::string &filepath, patient_data &data) {
 
     /* Get the file size */
     fseek(in_fp, 0, SEEK_END);
-    size_t file_size = ftell(in_fp);
+    const size_t file_size = ftell(in_fp);
     fseek(in_fp, 0, SEEK_SET);
 
     /* Read the file into a buffer into memory (RAM) */
@@ -142,14 +143,14 @@ void load_data_parallel(const std::string &filepath, patient_data &data) {
     data.y.resize(num_lines);
     data.z.resize(num_lines);
 
-    auto max_num_threads = static_cast<size_t>(omp_get_max_threads());
-    size_t chunk_size = num_lines / max_num_threads;
+    const auto max_num_threads = static_cast<size_t>(omp_get_max_threads());
+    const size_t chunk_size = num_lines / max_num_threads;
 
     #pragma omp parallel for default(none) shared(lines, data, num_lines, max_num_threads, chunk_size)
     for (size_t i = 0; i < max_num_threads; i++) {
-        size_t start = i * chunk_size;
+        const size_t start = i * chunk_size;
         /* Final thread may have to handle a little more elements */
-        size_t end = (i == max_num_threads - 1) ? num_lines : (i + 1) * chunk_size;
+        const size_t end = (i == max_num_threads - 1) ? num_lines : (i + 1) * chunk_size;
 
         char line[max_byte_value];
         /* Parse the lines */

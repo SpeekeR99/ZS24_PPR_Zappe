@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+/* This, and the computations, are the only files where I found OOP to be useful */
+
 /**
  * Option class
  * Represents a command line option
@@ -72,15 +74,15 @@ public:
      * Parse the arguments
      * @return Map of options (key is the option name, value is the user provided value)
      */
-    std::map<std::string, std::string> parse_args();
+    [[nodiscard]] std::map<std::string, std::string> parse_args() const;
 
     /**
      * Print usage message
      */
-    void print_usage();
+    void print_usage() const;
 
     /**
      * Print help message
      */
-    void print_help();
+    void print_help() const;
 };

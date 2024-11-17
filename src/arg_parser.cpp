@@ -14,14 +14,14 @@ void arg_parser::add_option(const option &opt) {
     this->options.push_back(opt);
 }
 
-std::map<std::string, std::string> arg_parser::parse_args() {
+std::map<std::string, std::string> arg_parser::parse_args() const {
     /* Prepare the map of arguments */
     std::map<std::string, std::string> args;
 
     /* Iterate over the arguments */
     for (auto i = 1; i < this->argc; i++) {
         /* Get the argument */
-        std::string arg = this->argv[i];
+        const std::string arg = this->argv[i];
         /* For later use of known arguments */
         bool known = false;
 
@@ -74,7 +74,7 @@ std::map<std::string, std::string> arg_parser::parse_args() {
     return args;
 }
 
-void arg_parser::print_usage() {
+void arg_parser::print_usage() const {
     /* Simple usage message */
     std::cerr << "Usage: " << this->argv[0] << " ";
     for (const auto &opt : this->options) {
@@ -94,7 +94,7 @@ void arg_parser::print_usage() {
     std::cerr << std::endl;
 }
 
-void arg_parser::print_help() {
+void arg_parser::print_help() const {
     /* Simple help message; start of by printing the usage message */
     this->print_usage();
     std::cout << std::endl;

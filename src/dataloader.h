@@ -7,12 +7,7 @@
 
 #include <omp.h>
 
-/** Max byte value */
-constexpr size_t max_byte_value = 256;
-/** 1 KB */
-constexpr size_t KB = 1 << 10;
-/** 1 MB */
-constexpr size_t MB = 1 << 20;
+#include "utils.h"
 
 /**
  * Data structure to store the loaded data

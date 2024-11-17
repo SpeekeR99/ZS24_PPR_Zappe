@@ -1,12 +1,17 @@
 #include <iostream>
 #include <chrono>
 #include <variant>
+
 #include "arg_parser.h"
 #include "dataloader.h"
 #include "computations.h"
 
-using seq_vec_variant = std::variant<seq_comp, vec_comp>;
-
+/**
+ * Main function
+ * @param argc Argument count
+ * @param argv Argument values
+ * @return Exit code
+ */
 int main(int argc, char **argv) {
     /* Parse the arguments */
     arg_parser parser(argc, argv);
@@ -32,7 +37,7 @@ int main(int argc, char **argv) {
     policy_p == "ser" ? omp_set_num_threads(1) : omp_set_num_threads(omp_get_max_threads());
 
     /* Choose the policy for computations */
-    seq_vec_variant comp = seq_comp();
+    std::variant<seq_comp, vec_comp> comp = seq_comp();
     if (policy_v == "vec")
         comp = vec_comp();
     std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ") << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl << std::endl;

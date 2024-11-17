@@ -1,8 +1,8 @@
 #include "merge_sort.h"
 
-void merge(std::vector<double> &arr, size_t left, size_t mid, size_t right) {
-    size_t n1 = mid - left + 1;
-    size_t n2 = right - mid;
+void merge(std::vector<double> &arr, const size_t left, const size_t mid, const size_t right) {
+    const size_t n1 = mid - left + 1;
+    const size_t n2 = right - mid;
 
     /* Temporary arrays to hold the left and right halves */
     std::vector<double> leftArr(arr.begin() + static_cast<int>(left), arr.begin() + static_cast<int>(mid) + 1);
@@ -26,8 +26,8 @@ void merge_sort(std::vector<double> &arr) {
         /* For each pair of sub-arrays -- left and right -- sort and merge them */
         #pragma omp parallel for default(none) shared(arr, size)
         for (size_t left = 0; left < arr.size(); left += 2 * size) {
-            size_t mid = std::min(left + size - 1, arr.size() - 1);
-            size_t right = std::min(left + 2 * size - 1, arr.size() - 1);
+            const size_t mid = std::min(left + size - 1, arr.size() - 1);
+            const size_t right = std::min(left + 2 * size - 1, arr.size() - 1);
 
             /* Sort and merge the pair */
             merge(arr, left, mid, right);
