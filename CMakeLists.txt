@@ -1,13 +1,26 @@
 cmake_minimum_required(VERSION 3.21)
 project(ZS24_PPR_Zappe)
 
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -fopenmp -mavx2")
-# This is how you can compile with single precision instead of double precision
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -fopenmp -mavx2 -D_USE_FLOAT")
 
+# Set compiler specific flags
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # Flags for MSVC
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /arch:AVX2")
+    # This is how you can compile with single precision instead of double precision
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /openmp /arch:AVX2 /D_USE_FLOAT")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # Flags for GCC/Clang
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -ltbb -mavx2")
+    # This is how you can compile with single precision instead of double precision
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -fopenmp -mavx2 -D_USE_FLOAT")
+endif()
+
+# Include directories
 include_directories(src)
 
+# Add executable
 add_executable(
     ZS24_PPR_Zappe
     src/main.cpp

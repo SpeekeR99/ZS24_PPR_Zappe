@@ -48,10 +48,14 @@ int main(int argc, char **argv) {
     /* Set the number of threads */
     policy_p == "ser" ? omp_set_num_threads(1) : omp_set_num_threads(omp_get_max_threads());
 
-    /* Choose the policy for computations */
+    /* Choose the policies for computations */
+    std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy = std::execution::seq;
     std::variant<seq_comp, vec_comp> comp = seq_comp();
+    if (policy_p == "par")
+        policy = std::execution::par;
     if (policy_v == "vec")
         comp = vec_comp();
+
     std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ")
               << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl;
     std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
@@ -64,16 +68,9 @@ int main(int argc, char **argv) {
 
         auto start = std::chrono::high_resolution_clock::now();  /* Time measurement */
 
-        /*
-         * Try catch here is because load_data_parallel() loads the whole file into memory
-         * and if the file is too big, it may cause a memory error -- if that happens, my
-         * older function load_data_super_fast() is called, which is slower, but safer (I/O bound)
-         */
-//        try {
-        load_data_parallel(file, data);
-//        } catch (const std::exception &e) {
-//            load_data_super_fast(file, data);
-//        }
+        std::visit([&](auto &&exec) {
+            load_data_parallel(exec, file, data);
+        }, policy);
 
         auto end = std::chrono::high_resolution_clock::now();  /* Time measurement */
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -98,10 +95,14 @@ int main(int argc, char **argv) {
              * (mimics dynamic polymorphism, but with no runtime overhead)
              */
             auto mad = std::visit([&](auto &&comp) -> decimal {
-                return comp.compute_mad(vectors[i]);
+                return std::visit([&](auto &&exec) -> decimal {
+                    return comp.compute_mad(exec, vectors[i]);
+                }, policy);
             }, comp);
             auto coef_var = std::visit([&](auto &&comp) -> decimal {
-                return comp.compute_coef_var(vectors[i]);
+                return std::visit([&](auto &&exec) -> decimal {
+                    return comp.compute_coef_var(exec, vectors[i]);
+                }, policy);
             }, comp);
 
             end = std::chrono::high_resolution_clock::now();  /* Time measurement */
