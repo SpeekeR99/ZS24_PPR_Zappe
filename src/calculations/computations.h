@@ -1,12 +1,10 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
 #include <algorithm>
 #include <cmath>
 #include <variant>
 
-#include <omp.h>
 #include <execution>
 #include <immintrin.h>
 
@@ -38,8 +36,6 @@ public:
     [[nodiscard]] decimal compute_mad(exec_policy policy, std::vector<decimal> &arr) {
         /* Sort the array for median calculation */
         merge_sort(policy, arr);
-
-        std::cout << (std::is_sorted(arr.begin(), arr.end()) ? "Sorted" : "Not sorted") << std::endl;
 
         /* Get the median */
         const auto median = (arr[arr.size() / 2] + arr[(arr.size() - 1) / 2]) / 2.0;

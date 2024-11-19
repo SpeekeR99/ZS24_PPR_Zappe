@@ -6,7 +6,6 @@
 #include <cstring>
 
 #include <execution>
-#include <omp.h>
 
 #include "utils/utils.h"
 

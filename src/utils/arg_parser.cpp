@@ -112,15 +112,15 @@ void arg_parser::print_usage() const {
 void arg_parser::print_help() const {
     /* Simple help message; start of by printing the usage message */
     this->print_usage();
-    std::cout << std::endl;
+    std::cerr << std::endl;
 
     /* List all the options with their descriptions */
     for (const auto &opt : this->options) {
-        std::cout << opt.name << " - " << opt.desc;
+        std::cerr << opt.name << " - " << opt.desc;
         if (opt.required)
-            std::cout << " (required)";
+            std::cerr << " (required)";
         if (opt.has_value)
-            std::cout << " (value required)";
-        std::cout << std::endl;
+            std::cerr << " (value required)";
+        std::cerr << std::endl;
     }
 }
