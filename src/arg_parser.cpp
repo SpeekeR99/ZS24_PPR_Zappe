@@ -71,6 +71,19 @@ std::map<std::string, std::string> arg_parser::parse_args() const {
         }
     }
 
+    /* Additional check for "-f" and "-d" flag, because they are mutually exclusive */
+    if (args.find("-f") != args.end() && args.find("-d") != args.end()) {
+        std::cerr << "Options -f and -d are mutually exclusive" << std::endl;
+        this->print_usage();
+        exit(EXIT_FAILURE);
+    }
+    /* But at least one is required */
+    if (args.find("-f") == args.end() && args.find("-d") == args.end()) {
+        std::cerr << "One of the options -f or -d is required" << std::endl;
+        this->print_usage();
+        exit(EXIT_FAILURE);
+    }
+
     return args;
 }
 
