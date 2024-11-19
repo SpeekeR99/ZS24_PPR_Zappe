@@ -3,9 +3,9 @@
 #include <variant>
 #include <filesystem>
 
-#include "arg_parser.h"
-#include "dataloader.h"
-#include "computations.h"
+#include "utils/arg_parser.h"
+#include "dataloader/dataloader.h"
+#include "calculations/computations.h"
 
 /**
  * Main function

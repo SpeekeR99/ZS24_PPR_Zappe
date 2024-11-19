@@ -7,7 +7,7 @@
 
 #include <omp.h>
 
-#include "utils.h"
+#include "utils/utils.h"
 
 /**
  * Data structure to store the loaded data

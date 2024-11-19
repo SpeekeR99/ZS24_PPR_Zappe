@@ -1,4 +1,4 @@
-#include "dataloader.h"
+#include "dataloader/dataloader.h"
 
 void load_data_fast(const std::string& filepath, patient_data &data) {
     /* Open the file */

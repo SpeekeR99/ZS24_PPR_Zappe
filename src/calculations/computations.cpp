@@ -1,4 +1,4 @@
-#include "computations.h"
+#include "calculations/computations.h"
 
 void seq_comp::compute_abs_diff(const std::vector<decimal> &arr, const decimal median, std::vector<decimal> &diff) {
     /* Calculate the absolute differences from the median */

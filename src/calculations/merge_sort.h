@@ -5,7 +5,7 @@
 
 #include <omp.h>
 
-#include "utils.h"
+#include "utils/utils.h"
 
 /**
  * Merge function

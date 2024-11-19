@@ -8,8 +8,8 @@
 #include <omp.h>
 #include <immintrin.h>
 
-#include "merge_sort.h"
-#include "utils.h"
+#include "calculations/merge_sort.h"
+#include "utils/utils.h"
 
 /* This, and the arg parser, are the only files where I found OOP to be useful */
 
