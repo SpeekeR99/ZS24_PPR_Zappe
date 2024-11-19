@@ -106,6 +106,7 @@ public:
     static void compute_abs_diff(exec_policy policy, const std::vector<decimal> &arr, decimal median, std::vector<decimal> &diff) {
         /* Calculate the absolute differences from the median */
         std::for_each(policy, arr.begin(), arr.end(), [&](const auto &val) {
+            /* Trick: &val - &arr[0] gives the index of the element */
             diff[&val - &arr[0]] = std::abs(val - median);
         });
     }

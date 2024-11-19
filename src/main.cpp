@@ -16,8 +16,8 @@
 int main(int argc, char **argv) {
     /* Parse the arguments */
     arg_parser parser(argc, argv);
-    parser.add_option(option("-f", "Filepath to the data file (required; mutually exclusive with -d)", true, false));
-    parser.add_option(option("-d", "Filepath to the data directory (required; mutually exclusive with -f)", true, false));
+    parser.add_option(option("-f", "Filepath to the data file (mutually exclusive with -d)", true, true));
+    parser.add_option(option("-d", "Filepath to the data directory (mutually exclusive with -f)", true, true));
     parser.add_option(option("--par", "Use parallel computation (serial by default)", false, false));
     parser.add_option(option("--vec", "Use vectorized computation (sequential by default)", false, false));
     parser.add_option(option("-h", "Print this help message", false, false));

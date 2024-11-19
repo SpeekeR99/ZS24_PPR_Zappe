@@ -65,6 +65,8 @@ std::map<std::string, std::string> arg_parser::parse_args() const {
     /* Check if all required options are provided */
     for (const auto &opt : this->options) {
         if (opt.required && args.find(opt.name) == args.end()) {
+            if (opt.name == "-f" || opt.name == "-d")  /* These two are handled additionally below */
+                continue;
             std::cerr << "Option " << opt.name << " is required" << std::endl;
             this->print_usage();
             exit(EXIT_FAILURE);

@@ -19,6 +19,17 @@ endif()
 
 # Include directories
 include_directories(src)
+include_directories(lib)
+
+# Drawing library files from https://github.com/SmartCGMS/common.git
+set(
+    drawing
+    lib/drawing/Drawing.cpp
+    lib/drawing/Drawing.h
+    lib/drawing/IRenderer.h
+    lib/drawing/SVGRenderer.cpp
+    lib/drawing/SVGRenderer.h
+)
 
 # Add executable
 add_executable(
@@ -33,4 +44,5 @@ add_executable(
     src/calculations/merge_sort.cpp
     src/calculations/computations.h
     src/calculations/computations.cpp
+    ${drawing}
 )
