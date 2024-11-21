@@ -270,57 +270,40 @@ int main(int argc, char **argv) {
 //
 //    plot_line_chart("res/test.svg", x_values_list, y_values_list, "Test Chart", "X", "Y", labels);
 
-    gpu_manager gpu;
+    auto platform = init_platform();
+    auto device = init_device(platform);
+    auto context = cl::Context(device);
+    auto queue = cl::CommandQueue(context, device);
 
-    // Prepare data for the test
-    const unsigned int n = 1024; // Number of elements
-    std::vector<float> A(n, 1.0f); // Vector A filled with 1.0
-    std::vector<float> B(n, 2.0f); // Vector B filled with 2.0
-    std::vector<float> C(n);       // Result vector
+    auto program = load_program(context, device, kernel_source);
 
-    const std::string kernel_source = R"(__kernel void vector_add(__global const float* A, __global const float* B, __global float* C, const unsigned int n) {
-        int id = get_global_id(0);
-        if (id < n) {
-            C[id] = A[id] + B[id];
-        }
-    })";
-
-    // Create program and build it
-    cl::Program program(gpu.context, kernel_source);
-    try {
-        program.build({ gpu.device });
-    } catch (const std::exception &e) {
-        // If build fails, print the log
-        std::cerr << "Build Log:\n"
-                  << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(gpu.device)
-                  << std::endl;
-        throw;
-    }
-
-    // Create kernel
-    cl::Kernel kernel(program, "vector_add");
+    // Create a vector of random numbers
+    size_t n = 100;
+    std::vector<double> a(n, 3.14);
+    std::vector<double> b(n, 2.72);
+    std::vector<double> c(n);
 
     // Create buffers
-    cl::Buffer buffer_A(gpu.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, n * sizeof(float), A.data());
-    cl::Buffer buffer_B(gpu.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, n * sizeof(float), B.data());
-    cl::Buffer buffer_C(gpu.context, CL_MEM_WRITE_ONLY, n * sizeof(float));
+    cl::Buffer buffer_a(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, a.data());
+    cl::Buffer buffer_b(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, b.data());
+    cl::Buffer buffer_c(context, CL_MEM_WRITE_ONLY, sizeof(double) * n);
 
-    // Set kernel arguments
-    kernel.setArg(0, buffer_A);
-    kernel.setArg(1, buffer_B);
-    kernel.setArg(2, buffer_C);
-    kernel.setArg(3, n);
+    // Set up kernel arguments
+    cl::Kernel kernel_compute_coef_var(program, "sum");
 
-    // Execute kernel
-    cl::NDRange global_work_size(n);
-    gpu.queue.enqueueNDRangeKernel(kernel, cl::NullRange, global_work_size);
+    // Run the kernel
+    kernel_compute_coef_var.setArg(0, buffer_a);
+    kernel_compute_coef_var.setArg(1, buffer_b);
+    kernel_compute_coef_var.setArg(2, buffer_c);
+    queue.enqueueNDRangeKernel(kernel_compute_coef_var, cl::NullRange, cl::NDRange(n), cl::NullRange);
 
-    // Read results
-    gpu.queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, n * sizeof(float), C.data());
+    // Read back the result
+    queue.enqueueReadBuffer(buffer_c, CL_TRUE, 0, sizeof(double) * n, c.data());
 
-    // Print results
+    // Print the result
     for (size_t i = 0; i < n; i++)
-        std::cout << C[i] << " ";
+        std::cout << c[i] << " ";
+    std::cout << std::endl;
 
     return EXIT_SUCCESS;
 }
