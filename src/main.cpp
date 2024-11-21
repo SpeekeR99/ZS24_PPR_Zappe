@@ -6,6 +6,7 @@
 #include "utils/arg_parser.h"
 #include "dataloader/dataloader.h"
 #include "calculations/computations.h"
+#include "my_drawing//svg_generator.h"
 
 /**
  * Parses the arguments using the arg_parser class
@@ -157,16 +158,6 @@ void execute_computations_for_repetitions(patient_data &data, size_t num_data_po
         std::cout << "Mean absolute deviation: " << mad_med << std::endl;
         std::cout << "Coefficient of variation: " << coef_var_med << std::endl;
         std::cout << "Time taken " << computed_in_med << "ms" << std::endl;
-
-        /* Calculate the means */
-        const auto computed_in_avg = std::accumulate(measured_times[i].begin(), measured_times[i].end(), 0.0) / static_cast<double>(measured_times[i].size());
-        const auto mad_avg = std::accumulate(mads[i].begin(), mads[i].end(), 0.0) / static_cast<double>(mads[i].size());
-        const auto coef_var_avg = std::accumulate(coef_vars[i].begin(), coef_vars[i].end(), 0.0) / static_cast<double>(coef_vars[i].size());
-
-        std::cout << "Averages:" << std::endl;
-        std::cout << "Mean absolute deviation: " << mad_avg << std::endl;
-        std::cout << "Coefficient of variation: " << coef_var_avg << std::endl;
-        std::cout << "Time taken " << computed_in_avg << "ms" << std::endl << std::endl;
     }
 }
 
@@ -251,6 +242,10 @@ int main(int argc, char **argv) {
     bool all = args.find("--all") != args.end();
     choose_policies(args, all, policy, comp);
 
+    /* Prepare res directory for the plots, if it does not exist */
+    if (!std::filesystem::exists("res"))
+        std::filesystem::create_directory("res");
+
     /*
      * Execute the computations:
      * For each file, load the data
@@ -261,6 +256,18 @@ int main(int argc, char **argv) {
      * For each vector X, Y, Z from the data, finally compute the MAD and CV
      */
     execute_computations(files, repetitions, num_chunks, policy, comp, all);
+
+    /* Example plot for my future self */
+    std::vector<double> x = {0, 1, 2, 3, 4, 5};
+    std::vector<double> y1 = {0, 1, 4, 9, 16, 25};
+    std::vector<double> y2 = {0, 1, 2, 3, 4, 5};
+
+    std::vector<std::vector<double>> x_values_list = {x, x};
+    std::vector<std::vector<double>> y_values_list = {y1, y2};
+
+    std::vector<std::string> labels = {"y1", "y2"};
+
+    plot_line_chart("res/test.svg", x_values_list, y_values_list, "Test Chart", "X", "Y", labels);
 
     return EXIT_SUCCESS;
 }

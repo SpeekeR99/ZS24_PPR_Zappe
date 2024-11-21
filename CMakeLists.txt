@@ -45,4 +45,6 @@ add_executable(
     src/calculations/computations.h
     src/calculations/computations.cpp
     ${drawing}
+    src/my_drawing/svg_generator.h
+    src/my_drawing/svg_generator.cpp
 )
