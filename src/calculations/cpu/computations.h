@@ -8,7 +8,7 @@
 #include <execution>
 #include <immintrin.h>
 
-#include "calculations/merge_sort.h"
+#include "merge_sort.h"
 #include "utils/utils.h"
 
 /* This, and the arg parser, are the only files where I found OOP to be useful */
@@ -288,8 +288,8 @@ public:
             }
 
             /* Extract the sums from the AVX2 registers */
-            std::vector<decimal> sum_arr(vec_capacity);
-            std::vector<decimal> sum_sq_arr(vec_capacity);
+            std::vector<decimal> sum_arr(vec_capacity, 0.0);
+            std::vector<decimal> sum_sq_arr(vec_capacity, 0.0);
             #ifndef _USE_FLOAT
             _mm256_storeu_pd(sum_arr.data(), sum_vec);
             _mm256_storeu_pd(sum_sq_arr.data(), sum_sq_vec);

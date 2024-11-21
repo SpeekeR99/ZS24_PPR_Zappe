@@ -5,7 +5,8 @@
 
 #include "utils/arg_parser.h"
 #include "dataloader/dataloader.h"
-#include "calculations/computations.h"
+#include "calculations/cpu/computations.h"
+#include "calculations/gpu/gpu.h"
 #include "my_drawing//svg_generator.h"
 
 /**
@@ -223,51 +224,103 @@ void execute_computations(std::vector<std::string> files, size_t repetitions, si
  * @return Exit code
  */
 int main(int argc, char **argv) {
-    /* Parse the arguments */
-    auto args = parse_args(argc, argv);
+//    /* Parse the arguments */
+//    auto args = parse_args(argc, argv);
+//
+//    /* User arguments were valid, let him know about single / double precision */
+//    std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
+//
+//    /* Filepath to the data file(s) */
+//    auto files = get_files(args);
+//
+//    /* Number of repetitions and chunks */
+//    const size_t repetitions = args.find("-r") != args.end() ? std::stoi(args["-r"]) : 1;
+//    const size_t num_chunks = args.find("-n") != args.end() ? std::stoi(args["-n"]) : 1;
+//
+//    /* Choose the policies for computations */
+//    std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy;
+//    std::variant<seq_comp, vec_comp> comp;
+//    bool all = args.find("--all") != args.end();
+//    choose_policies(args, all, policy, comp);
+//
+//    /* Prepare res directory for the plots, if it does not exist */
+//    if (!std::filesystem::exists("res"))
+//        std::filesystem::create_directory("res");
+//
+//    /*
+//     * Execute the computations:
+//     * For each file, load the data
+//     * For each split chunk of the data (purpose: graphs -- lines X points)
+//     * Now branching: if all is true, for each policy combination (purpose: graphs -- more lines)
+//     *                else for the chosen policy combination by the user
+//     * For each repetition, (deep) copy the data (purpose: median of the measured times)
+//     * For each vector X, Y, Z from the data, finally compute the MAD and CV
+//     */
+//    execute_computations(files, repetitions, num_chunks, policy, comp, all);
+//
+//    /* Example plot for my future self */
+//    std::vector<double> x = {0, 1, 2, 3, 4, 5};
+//    std::vector<double> y1 = {0, 1, 4, 9, 16, 25};
+//    std::vector<double> y2 = {0, 1, 2, 3, 4, 5};
+//
+//    std::vector<std::vector<double>> x_values_list = {x, x};
+//    std::vector<std::vector<double>> y_values_list = {y1, y2};
+//
+//    std::vector<std::string> labels = {"y1", "y2"};
+//
+//    plot_line_chart("res/test.svg", x_values_list, y_values_list, "Test Chart", "X", "Y", labels);
 
-    /* User arguments were valid, let him know about single / double precision */
-    std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
+    gpu_manager gpu;
 
-    /* Filepath to the data file(s) */
-    auto files = get_files(args);
+    // Prepare data for the test
+    const unsigned int n = 1024; // Number of elements
+    std::vector<float> A(n, 1.0f); // Vector A filled with 1.0
+    std::vector<float> B(n, 2.0f); // Vector B filled with 2.0
+    std::vector<float> C(n);       // Result vector
 
-    /* Number of repetitions and chunks */
-    const size_t repetitions = args.find("-r") != args.end() ? std::stoi(args["-r"]) : 1;
-    const size_t num_chunks = args.find("-n") != args.end() ? std::stoi(args["-n"]) : 1;
+    const std::string kernel_source = R"(__kernel void vector_add(__global const float* A, __global const float* B, __global float* C, const unsigned int n) {
+        int id = get_global_id(0);
+        if (id < n) {
+            C[id] = A[id] + B[id];
+        }
+    })";
 
-    /* Choose the policies for computations */
-    std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy;
-    std::variant<seq_comp, vec_comp> comp;
-    bool all = args.find("--all") != args.end();
-    choose_policies(args, all, policy, comp);
+    // Create program and build it
+    cl::Program program(gpu.context, kernel_source);
+    try {
+        program.build({ gpu.device });
+    } catch (const std::exception &e) {
+        // If build fails, print the log
+        std::cerr << "Build Log:\n"
+                  << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(gpu.device)
+                  << std::endl;
+        throw;
+    }
 
-    /* Prepare res directory for the plots, if it does not exist */
-    if (!std::filesystem::exists("res"))
-        std::filesystem::create_directory("res");
+    // Create kernel
+    cl::Kernel kernel(program, "vector_add");
 
-    /*
-     * Execute the computations:
-     * For each file, load the data
-     * For each split chunk of the data (purpose: graphs -- lines X points)
-     * Now branching: if all is true, for each policy combination (purpose: graphs -- more lines)
-     *                else for the chosen policy combination by the user
-     * For each repetition, (deep) copy the data (purpose: median of the measured times)
-     * For each vector X, Y, Z from the data, finally compute the MAD and CV
-     */
-    execute_computations(files, repetitions, num_chunks, policy, comp, all);
+    // Create buffers
+    cl::Buffer buffer_A(gpu.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, n * sizeof(float), A.data());
+    cl::Buffer buffer_B(gpu.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, n * sizeof(float), B.data());
+    cl::Buffer buffer_C(gpu.context, CL_MEM_WRITE_ONLY, n * sizeof(float));
 
-    /* Example plot for my future self */
-    std::vector<double> x = {0, 1, 2, 3, 4, 5};
-    std::vector<double> y1 = {0, 1, 4, 9, 16, 25};
-    std::vector<double> y2 = {0, 1, 2, 3, 4, 5};
+    // Set kernel arguments
+    kernel.setArg(0, buffer_A);
+    kernel.setArg(1, buffer_B);
+    kernel.setArg(2, buffer_C);
+    kernel.setArg(3, n);
 
-    std::vector<std::vector<double>> x_values_list = {x, x};
-    std::vector<std::vector<double>> y_values_list = {y1, y2};
+    // Execute kernel
+    cl::NDRange global_work_size(n);
+    gpu.queue.enqueueNDRangeKernel(kernel, cl::NullRange, global_work_size);
 
-    std::vector<std::string> labels = {"y1", "y2"};
+    // Read results
+    gpu.queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, n * sizeof(float), C.data());
 
-    plot_line_chart("res/test.svg", x_values_list, y_values_list, "Test Chart", "X", "Y", labels);
+    // Print results
+    for (size_t i = 0; i < n; i++)
+        std::cout << C[i] << " ";
 
     return EXIT_SUCCESS;
 }
