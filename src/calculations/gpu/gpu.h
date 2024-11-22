@@ -54,6 +54,50 @@ __kernel void abs_diff(__global const double *arr, __global double *diff, const 
     /* Compute absolute difference */
     diff[i] = fabs(arr[i] - median);
 }
+
+/**
+ * Compute sum of elements in the array and sum of squared elements in the array
+ * @param arr Array
+ * @param sums Sum of elements
+ * @param sums_sq Sum of squared elements
+ * @param n Array size
+ */
+__kernel void reduce_sum(__global const double *arr, __global double *sums, __global double *sums_sq, const int n) {
+    /* Get index */
+    int gid = get_global_id(0);
+    /* Get local index */
+    int local_id = get_local_id(0);
+    /* Get group index */
+    int group_id = get_group_id(0);
+
+    /* Local (shared) memory for partial sums */
+    __local double partial_sums[256];
+    __local double partial_sums_sq[256];
+
+    /* Each thread loads one element into local memory */
+    partial_sums[local_id] = (gid < n) ? arr[gid] : 0.0;
+    partial_sums_sq[local_id] = (gid < n) ? arr[gid] * arr[gid] : 0.0;
+
+    /* Synchronize */
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    /* Reduction in shared memory -- within a group */
+    for (int stride = get_local_size(0) / 2; stride > 0; stride /= 2) {
+        if (local_id < stride) {
+            partial_sums[local_id] += partial_sums[local_id + stride];
+            partial_sums_sq[local_id] += partial_sums_sq[local_id + stride];
+        }
+
+        /* Wait for all threads to finish */
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    /* Write result for this block to global memory */
+    if (local_id == 0) {
+        sums[group_id] = partial_sums[0];
+        sums_sq[group_id] = partial_sums_sq[0];
+    }
+}
 )";
 #else
 /* TODO: float kernel */

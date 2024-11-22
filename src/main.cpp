@@ -277,39 +277,43 @@ int main(int argc, char **argv) {
 
     auto program = load_program(context, device, kernel_source);
 
-    // Create a vector of random numbers
-    size_t n = 100;
-    std::vector<double> arr(n);
-    for (auto &num : arr)
-        num = rand() % n;
-    std::vector<double> temp(n); // Temporary buffer
+    size_t n = 100000; // Vector size
+    std::vector<double> arr(n, 2.0); // Example vector with all elements as 1.0
+    std::vector<double> sums((n + 255) / 256); // Partial results buffer
+    std::vector<double> sums_sq((n + 255) / 256); // Partial results buffer
 
     // Create OpenCL buffers
     cl::Buffer buffer_arr(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, arr.data());
-    cl::Buffer buffer_temp(context, CL_MEM_READ_WRITE, sizeof(double) * n);
+    cl::Buffer buffer_sums(context, CL_MEM_READ_WRITE, sizeof(double) * sums.size());
+    cl::Buffer buffer_sums_sq(context, CL_MEM_READ_WRITE, sizeof(double) * sums_sq.size());
 
-    // Iteratively merge chunks
-    cl::Kernel kernel_merge_sort(program, "merge");
-    for (size_t size = 1; size < arr.size(); size *= 2) {
-        kernel_merge_sort.setArg(0, buffer_arr);
-        kernel_merge_sort.setArg(1, buffer_temp);
-        kernel_merge_sort.setArg(2, static_cast<int>(size));
-        kernel_merge_sort.setArg(3, static_cast<int>(n));
+    // Create and execute the kernel
+    cl::Kernel kernel_reduce_sum(program, "reduce_sum");
+    size_t local_size = 256;
+    size_t global_size = ((n + local_size - 1) / local_size) * local_size;
 
-        size_t global_size = (n + 2 * size - 1) / (2 * size); // Calculate global size
-        queue.enqueueNDRangeKernel(kernel_merge_sort, cl::NullRange, cl::NDRange(global_size), cl::NullRange);
-        queue.finish();
+    kernel_reduce_sum.setArg(0, buffer_arr);
+    kernel_reduce_sum.setArg(1, buffer_sums);
+    kernel_reduce_sum.setArg(2, buffer_sums_sq);
+    kernel_reduce_sum.setArg(3, static_cast<int>(n));
+
+    queue.enqueueNDRangeKernel(kernel_reduce_sum, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
+    queue.finish();
+
+    // Read back the partial sums
+    queue.enqueueReadBuffer(buffer_sums, CL_TRUE, 0, sizeof(double) * sums.size(), sums.data());
+    queue.enqueueReadBuffer(buffer_sums_sq, CL_TRUE, 0, sizeof(double) * sums_sq.size(), sums_sq.data());
+
+    // Final sum on the host
+    double total_sum = 0.0;
+    double total_sum_sq = 0.0;
+    for (size_t i = 0; i < sums.size(); i++) {
+        total_sum += sums[i];
+        total_sum_sq += sums_sq[i];
     }
 
-// Copy back the sorted array
-    queue.enqueueReadBuffer(buffer_arr, CL_TRUE, 0, sizeof(double) * n, arr.data());
-
-    // Print the result
-    for (size_t i = 0; i < n; i++)
-        std::cout << arr[i] << " ";
-    std::cout << std::endl;
-
-    std::cout << std::is_sorted(arr.begin(), arr.end()) << std::endl;
+    std::cout << "Total Sum: " << total_sum << std::endl;
+    std::cout << "Total Sum of Squares: " << total_sum_sq << std::endl;
 
     return EXIT_SUCCESS;
 }

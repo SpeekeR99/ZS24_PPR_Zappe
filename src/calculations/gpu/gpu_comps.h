@@ -10,6 +10,8 @@
 
 /* This, and the arg parser, are the only files where I found OOP to be useful */
 
+constexpr size_t local_size = 256;
+
 /**
  * GPU computation class
  * Defines the computation of absolute difference and sums on the GPU (OpenCL)
@@ -108,7 +110,7 @@ public:
     }
 
     /**
-     * TODO: what does this do?
+     * Compute sum of elements in the array and sum of squared elements in the array on the GPU
      * This is an actual implementation of the "abstract" function in the base class
      * This function has to be implemented in here (.h), because of the template
      * @tparam exec_policy Execution policy (std::execution::seq or std::execution::par)
@@ -119,6 +121,37 @@ public:
      */
     template<typename exec_policy>
     void compute_sums(exec_policy policy, const std::vector<decimal> &arr, decimal &sum, decimal &sum_sq) {
-        /* TODO: implement GPU sum and sum of squares */
+        const auto n = arr.size();
+
+        /* Partial results buffer -- equivalent to local_sums in my CPU implementation */
+        std::vector<decimal> sums((n + local_size - 1) / local_size);
+        std::vector<decimal> sums_sq((n + local_size - 1) / local_size);
+
+        /* Create buffers */
+        cl::Buffer buffer_arr(this->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * n, const_cast<decimal *>(arr.data()));
+        cl::Buffer buffer_sums(this->context, CL_MEM_WRITE_ONLY, sizeof(decimal) * sums.size());
+        cl::Buffer buffer_sums_sq(this->context, CL_MEM_WRITE_ONLY, sizeof(decimal) * sums_sq.size());
+
+        /* Prepare kernel and arguments */
+        cl::Kernel kernel(this->program, "reduce_sum");
+        kernel.setArg(0, buffer_arr);
+        kernel.setArg(1, buffer_sums);
+        kernel.setArg(2, buffer_sums_sq);
+        kernel.setArg(3, static_cast<int>(n));
+
+        /* Execute kernel */
+        size_t global_size = ((n + local_size - 1) / local_size) * local_size;
+        this->queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
+        this->queue.finish();
+
+        /* Read the partial results */
+        this->queue.enqueueReadBuffer(buffer_sums, CL_TRUE, 0, sizeof(decimal) * sums.size(), sums.data());
+        this->queue.enqueueReadBuffer(buffer_sums_sq, CL_TRUE, 0, sizeof(decimal) * sums_sq.size(), sums_sq.data());
+
+        /* Sum the partial results */
+        for (size_t i = 0; i < sums.size(); i++) {
+            sum += sums[i];
+            sum_sq += sums_sq[i];
+        }
     }
 };
