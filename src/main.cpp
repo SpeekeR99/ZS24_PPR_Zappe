@@ -85,8 +85,10 @@ void choose_policies(
     else if (!gpu)
         std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ")
                   << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl;
-    else
+    else {
+        policy_p = "par";  /* For the parallel data load */
         std::cout << "Using GPU computation..." << std::endl;
+    }
 
     /* Choose execution policy */
     policy = std::execution::seq;

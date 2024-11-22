@@ -18,28 +18,33 @@ constexpr char kernel_source[] = R"(
 __kernel void merge(__global double *arr, __global double *temp, int size, int n) {
     /* Get index */
     int gid = get_global_id(0);
+
     /* Equivalent of CPU sort 'for (size_t left = 0; left < arr.size(); left += 2 * size)' */
     int left = gid * size * 2;
+
     /* Mid and right indices could be out of bounds */
     int mid = min(left + size, n);
     int right = min(left + 2 * size, n);
+
+    /* Copy data to temp */
+    for (int i = left; i < right; i++)
+        temp[i] = arr[i];
+
+    /* Synchronize */
+    barrier(CLK_GLOBAL_MEM_FENCE);
 
     /* Pointers to be moved around */
     int l = left, r = mid, t = left;
 
     /* Merge two sorted sub-arrays */
     while (l < mid && r < right)
-        temp[t++] = arr[l] <= arr[r] ? arr[l++] : arr[r++];
+        arr[t++] = temp[l] <= temp[r] ? temp[l++] : temp[r++];
 
     /* Copy the rest if there are any */
     while (l < mid)
-        temp[t++] = arr[l++];
+        arr[t++] = temp[l++];
     while (r < right)
-        temp[t++] = arr[r++];
-
-    /* Synchronize and copy back to the original array (in-place kind of) */
-    for (int i = left; i < right; i++)
-        arr[i] = temp[i];
+        arr[t++] = temp[r++];
 }
 
 /**

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <vector>
 
 #include <CL/cl.hpp>
@@ -82,6 +83,8 @@ public:
 
         /* Read result */
         this->queue.enqueueReadBuffer(buffer_arr, CL_TRUE, 0, sizeof(decimal) * n, arr.data());
+
+        std::cout << ((std::is_sorted(arr.begin(), arr.end())) ? "Sorted" : "NOT SORTED!") << std::endl;
     }
 
     /**
