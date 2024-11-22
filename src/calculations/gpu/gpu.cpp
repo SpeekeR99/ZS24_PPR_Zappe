@@ -1,4 +1,4 @@
-#include "gpu.h"
+#include "calculations/gpu/gpu.h"
 
 cl::Platform init_platform() {
     /* Get number of platforms */

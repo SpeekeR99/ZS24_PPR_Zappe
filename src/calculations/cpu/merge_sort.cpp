@@ -1,4 +1,4 @@
-#include "merge_sort.h"
+#include "calculations/cpu/merge_sort.h"
 
 void merge(std::vector<decimal> &arr, const size_t left, const size_t mid, const size_t right) {
     const size_t n1 = mid - left + 1;

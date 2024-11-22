@@ -43,12 +43,16 @@ add_executable(
     src/utils/arg_parser.cpp
     src/dataloader/dataloader.h
     src/dataloader/dataloader.cpp
+    src/calculations/computations.h
+    src/calculations/computations.cpp
+    src/calculations/cpu/cpu_comps.h
+    src/calculations/cpu/cpu_comps.cpp
     src/calculations/cpu/merge_sort.h
     src/calculations/cpu/merge_sort.cpp
-    src/calculations/cpu/computations.h
-    src/calculations/cpu/computations.cpp
     src/calculations/gpu/gpu.h
     src/calculations/gpu/gpu.cpp
+    src/calculations/gpu/gpu_comps.cpp
+    src/calculations/gpu/gpu_comps.h
     ${drawing}
     src/my_drawing/svg_generator.h
     src/my_drawing/svg_generator.cpp

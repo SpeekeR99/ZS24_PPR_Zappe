@@ -1,4 +1,4 @@
-#include "svg_generator.h"
+#include "my_drawing/svg_generator.h"
 
 void plot_line_chart(
         const std::string &file_path,

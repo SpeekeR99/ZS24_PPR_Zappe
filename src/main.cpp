@@ -5,7 +5,7 @@
 
 #include "utils/arg_parser.h"
 #include "dataloader/dataloader.h"
-#include "calculations/cpu/computations.h"
+#include "calculations/cpu/cpu_comps.h"
 #include "calculations/gpu/gpu.h"
 #include "my_drawing//svg_generator.h"
 
@@ -224,40 +224,40 @@ void execute_computations(std::vector<std::string> files, size_t repetitions, si
  * @return Exit code
  */
 int main(int argc, char **argv) {
-//    /* Parse the arguments */
-//    auto args = parse_args(argc, argv);
-//
-//    /* User arguments were valid, let him know about single / double precision */
-//    std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
-//
-//    /* Filepath to the data file(s) */
-//    auto files = get_files(args);
-//
-//    /* Number of repetitions and chunks */
-//    const size_t repetitions = args.find("-r") != args.end() ? std::stoi(args["-r"]) : 1;
-//    const size_t num_chunks = args.find("-n") != args.end() ? std::stoi(args["-n"]) : 1;
-//
-//    /* Choose the policies for computations */
-//    std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy;
-//    std::variant<seq_comp, vec_comp> comp;
-//    bool all = args.find("--all") != args.end();
-//    choose_policies(args, all, policy, comp);
-//
-//    /* Prepare res directory for the plots, if it does not exist */
-//    if (!std::filesystem::exists("res"))
-//        std::filesystem::create_directory("res");
-//
-//    /*
-//     * Execute the computations:
-//     * For each file, load the data
-//     * For each split chunk of the data (purpose: graphs -- lines X points)
-//     * Now branching: if all is true, for each policy combination (purpose: graphs -- more lines)
-//     *                else for the chosen policy combination by the user
-//     * For each repetition, (deep) copy the data (purpose: median of the measured times)
-//     * For each vector X, Y, Z from the data, finally compute the MAD and CV
-//     */
-//    execute_computations(files, repetitions, num_chunks, policy, comp, all);
-//
+    /* Parse the arguments */
+    auto args = parse_args(argc, argv);
+
+    /* User arguments were valid, let him know about single / double precision */
+    std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
+
+    /* Filepath to the data file(s) */
+    auto files = get_files(args);
+
+    /* Number of repetitions and chunks */
+    const size_t repetitions = args.find("-r") != args.end() ? std::stoi(args["-r"]) : 1;
+    const size_t num_chunks = args.find("-n") != args.end() ? std::stoi(args["-n"]) : 1;
+
+    /* Choose the policies for computations */
+    std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy;
+    std::variant<seq_comp, vec_comp> comp;
+    bool all = args.find("--all") != args.end();
+    choose_policies(args, all, policy, comp);
+
+    /* Prepare res directory for the plots, if it does not exist */
+    if (!std::filesystem::exists("res"))
+        std::filesystem::create_directory("res");
+
+    /*
+     * Execute the computations:
+     * For each file, load the data
+     * For each split chunk of the data (purpose: graphs -- lines X points)
+     * Now branching: if all is true, for each policy combination (purpose: graphs -- more lines)
+     *                else for the chosen policy combination by the user
+     * For each repetition, (deep) copy the data (purpose: median of the measured times)
+     * For each vector X, Y, Z from the data, finally compute the MAD and CV
+     */
+    execute_computations(files, repetitions, num_chunks, policy, comp, all);
+
 //    /* Example plot for my future self */
 //    std::vector<double> x = {0, 1, 2, 3, 4, 5};
 //    std::vector<double> y1 = {0, 1, 4, 9, 16, 25};
@@ -270,40 +270,40 @@ int main(int argc, char **argv) {
 //
 //    plot_line_chart("res/test.svg", x_values_list, y_values_list, "Test Chart", "X", "Y", labels);
 
-    auto platform = init_platform();
-    auto device = init_device(platform);
-    auto context = cl::Context(device);
-    auto queue = cl::CommandQueue(context, device);
-
-    auto program = load_program(context, device, kernel_source);
-
-    // Create a vector of random numbers
-    size_t n = 100;
-    std::vector<double> a(n, 3.14);
-    std::vector<double> b(n, 2.72);
-    std::vector<double> c(n);
-
-    // Create buffers
-    cl::Buffer buffer_a(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, a.data());
-    cl::Buffer buffer_b(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, b.data());
-    cl::Buffer buffer_c(context, CL_MEM_WRITE_ONLY, sizeof(double) * n);
-
-    // Set up kernel arguments
-    cl::Kernel kernel_compute_coef_var(program, "sum");
-
-    // Run the kernel
-    kernel_compute_coef_var.setArg(0, buffer_a);
-    kernel_compute_coef_var.setArg(1, buffer_b);
-    kernel_compute_coef_var.setArg(2, buffer_c);
-    queue.enqueueNDRangeKernel(kernel_compute_coef_var, cl::NullRange, cl::NDRange(n), cl::NullRange);
-
-    // Read back the result
-    queue.enqueueReadBuffer(buffer_c, CL_TRUE, 0, sizeof(double) * n, c.data());
-
-    // Print the result
-    for (size_t i = 0; i < n; i++)
-        std::cout << c[i] << " ";
-    std::cout << std::endl;
+//    auto platform = init_platform();
+//    auto device = init_device(platform);
+//    auto context = cl::Context(device);
+//    auto queue = cl::CommandQueue(context, device);
+//
+//    auto program = load_program(context, device, kernel_source);
+//
+//    // Create a vector of random numbers
+//    size_t n = 100;
+//    std::vector<double> a(n, 3.14);
+//    std::vector<double> b(n, 2.72);
+//    std::vector<double> c(n);
+//
+//    // Create buffers
+//    cl::Buffer buffer_a(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, a.data());
+//    cl::Buffer buffer_b(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, b.data());
+//    cl::Buffer buffer_c(context, CL_MEM_WRITE_ONLY, sizeof(double) * n);
+//
+//    // Set up kernel arguments
+//    cl::Kernel kernel_compute_coef_var(program, "sum");
+//
+//    // Run the kernel
+//    kernel_compute_coef_var.setArg(0, buffer_a);
+//    kernel_compute_coef_var.setArg(1, buffer_b);
+//    kernel_compute_coef_var.setArg(2, buffer_c);
+//    queue.enqueueNDRangeKernel(kernel_compute_coef_var, cl::NullRange, cl::NDRange(n), cl::NullRange);
+//
+//    // Read back the result
+//    queue.enqueueReadBuffer(buffer_c, CL_TRUE, 0, sizeof(double) * n, c.data());
+//
+//    // Print the result
+//    for (size_t i = 0; i < n; i++)
+//        std::cout << c[i] << " ";
+//    std::cout << std::endl;
 
     return EXIT_SUCCESS;
 }
