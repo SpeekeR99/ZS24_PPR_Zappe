@@ -36,7 +36,8 @@ public:
     gpu_comps();
 
     /**
-     * TODO: what does this do?
+     * Uses merge kernel to sort the array on the GPU
+     * This is not an optimal GPU sorting algorithm, but it works
      * This is an actual implementation of the "abstract" function in the base class
      * This function has to be implemented in here (.h), because of the template
      * @tparam exec_policy Execution policy (std::execution::seq or std::execution::par)
@@ -45,7 +46,33 @@ public:
      */
     template<typename exec_policy>
     void sort(exec_policy policy, std::vector<decimal> &arr) {
-        /* TODO: implement GPU sort */
+        const auto n = arr.size();
+
+        /* Create buffers */
+        cl::Buffer buffer_arr(this->context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * n, arr.data());
+        cl::Buffer buffer_temp(this->context, CL_MEM_READ_WRITE, sizeof(decimal) * n);
+
+        /* Prepare kernel */
+        cl::Kernel kernel_merge_sort(this->program, "merge");
+
+        /* Iterate over the array with increasing sub-array sizes (stride) */
+        for (size_t size = 1; size < arr.size(); size *= 2) {
+            /* Set kernel arguments */
+            kernel_merge_sort.setArg(0, buffer_arr);
+            kernel_merge_sort.setArg(1, buffer_temp);
+            kernel_merge_sort.setArg(2, static_cast<int>(size));
+            kernel_merge_sort.setArg(3, static_cast<int>(n));
+
+            /* Calculate global size */
+            size_t global_size = (n + 2 * size - 1) / (2 * size);
+
+            /* Execute kernel */
+            this->queue.enqueueNDRangeKernel(kernel_merge_sort, cl::NullRange, cl::NDRange(global_size), cl::NullRange);
+            this->queue.finish();
+        }
+
+        /* Read result */
+        this->queue.enqueueReadBuffer(buffer_arr, CL_TRUE, 0, sizeof(decimal) * n, arr.data());
     }
 
     /**

@@ -8,9 +8,38 @@
 /** Kernel source code -- basically "computations.cl" */
 #ifndef _USE_FLOAT
 constexpr char kernel_source[] = R"(
-__kernel void sum(__global const double *a, __global const double *b, __global double *c) {
-    int i = get_global_id(0);
-    c[i] = a[i] + b[i];
+/**
+ * Merge two sorted sub-arrays
+ * @param arr Array to be sorted
+ * @param temp Temporary array
+ * @param size Sub-array size (stride)
+ * @param n Array size
+ */
+__kernel void merge(__global double *arr, __global double *temp, int size, int n) {
+    /* Get index */
+    int gid = get_global_id(0);
+    /* Equivalent of CPU sort 'for (size_t left = 0; left < arr.size(); left += 2 * size)' */
+    int left = gid * size * 2;
+    /* Mid and right indices could be out of bounds */
+    int mid = min(left + size, n);
+    int right = min(left + 2 * size, n);
+
+    /* Pointers to be moved around */
+    int l = left, r = mid, t = left;
+
+    /* Merge two sorted sub-arrays */
+    while (l < mid && r < right)
+        temp[t++] = arr[l] <= arr[r] ? arr[l++] : arr[r++];
+
+    /* Copy the rest if there are any */
+    while (l < mid)
+        temp[t++] = arr[l++];
+    while (r < right)
+        temp[t++] = arr[r++];
+
+    /* Synchronize and copy back to the original array (in-place kind of) */
+    for (int i = left; i < right; i++)
+        arr[i] = temp[i];
 }
 
 /**

@@ -280,30 +280,36 @@ int main(int argc, char **argv) {
     // Create a vector of random numbers
     size_t n = 100;
     std::vector<double> arr(n);
-    std::iota(std::begin(arr), std::end(arr), 0);
-    std::vector<double> diff(n);
-    double median = 50;
+    for (auto &num : arr)
+        num = rand() % n;
+    std::vector<double> temp(n); // Temporary buffer
 
-    // Create buffers
-    cl::Buffer buffer_arr(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, arr.data());
-    cl::Buffer buffer_diff(context, CL_MEM_WRITE_ONLY, sizeof(double) * n);
+    // Create OpenCL buffers
+    cl::Buffer buffer_arr(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, arr.data());
+    cl::Buffer buffer_temp(context, CL_MEM_READ_WRITE, sizeof(double) * n);
 
-    // Set up kernel arguments
-    cl::Kernel kernel_compute_coef_var(program, "abs_diff");
+    // Iteratively merge chunks
+    cl::Kernel kernel_merge_sort(program, "merge");
+    for (size_t size = 1; size < arr.size(); size *= 2) {
+        kernel_merge_sort.setArg(0, buffer_arr);
+        kernel_merge_sort.setArg(1, buffer_temp);
+        kernel_merge_sort.setArg(2, static_cast<int>(size));
+        kernel_merge_sort.setArg(3, static_cast<int>(n));
 
-    // Run the kernel
-    kernel_compute_coef_var.setArg(0, buffer_arr);
-    kernel_compute_coef_var.setArg(1, buffer_diff);
-    kernel_compute_coef_var.setArg(2, median);
-    queue.enqueueNDRangeKernel(kernel_compute_coef_var, cl::NullRange, cl::NDRange(n), cl::NullRange);
+        size_t global_size = (n + 2 * size - 1) / (2 * size); // Calculate global size
+        queue.enqueueNDRangeKernel(kernel_merge_sort, cl::NullRange, cl::NDRange(global_size), cl::NullRange);
+        queue.finish();
+    }
 
-    // Read back the result
-    queue.enqueueReadBuffer(buffer_diff, CL_TRUE, 0, sizeof(double) * n, diff.data());
+// Copy back the sorted array
+    queue.enqueueReadBuffer(buffer_arr, CL_TRUE, 0, sizeof(double) * n, arr.data());
 
     // Print the result
     for (size_t i = 0; i < n; i++)
-        std::cout << diff[i] << " ";
+        std::cout << arr[i] << " ";
     std::cout << std::endl;
+
+    std::cout << std::is_sorted(arr.begin(), arr.end()) << std::endl;
 
     return EXIT_SUCCESS;
 }
