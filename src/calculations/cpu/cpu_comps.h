@@ -254,8 +254,8 @@ public:
             _mm256_storeu_pd(sum_arr.data(), sum_vec);
             _mm256_storeu_pd(sum_sq_arr.data(), sum_sq_vec);
             #else
-            _mm256_storeu_ps(sum_arr, sum_vec);
-            _mm256_storeu_ps(sum_sq_arr, sum_sq_vec);
+            _mm256_storeu_ps(sum_arr.data(), sum_vec);
+            _mm256_storeu_ps(sum_sq_arr.data(), sum_sq_vec);
             #endif
 
             /* Combine the sums */
