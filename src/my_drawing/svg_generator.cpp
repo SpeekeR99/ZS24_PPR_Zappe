@@ -92,7 +92,7 @@ void render_line_chart(
     }
 
     /* Prepare colors for each line */
-    std::vector<size_t> colors = {red, green, blue, magenta, yellow, cyan};
+    std::vector<size_t> colors = {red, green, blue, magenta, cyan, yellow};
 
     /* Plot each line */
     for (size_t line_index = 0; line_index < x_values_list.size(); ++line_index) {

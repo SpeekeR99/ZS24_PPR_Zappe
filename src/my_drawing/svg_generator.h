@@ -33,10 +33,10 @@ constexpr size_t green = 0x00ff00;
 constexpr size_t blue = 0x0000ff;
 /** Magenta color */
 constexpr size_t magenta = 0xff00ff;
-/** Yellow color */
-constexpr size_t yellow = 0xffff00;
 /** Cyan color */
 constexpr size_t cyan = 0x00ffff;
+/** Yellow color */
+constexpr size_t yellow = 0xffff00;
 
 /**
  * Uses the SVGRenderer.h from https://github.com/SmartCGMS/common.git
