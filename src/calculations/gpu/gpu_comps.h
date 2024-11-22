@@ -5,6 +5,8 @@
 #include <CL/cl.hpp>
 
 #include "calculations/computations.h"
+#include "calculations/gpu/gpu.h"
+#include "utils/utils.h"
 
 /* This, and the arg parser, are the only files where I found OOP to be useful */
 
@@ -14,6 +16,25 @@
  * Uses the static polymorphism technique (CRTP (Curiously Recurring Template Pattern)) to define the interface
  */
 class gpu_comps : public computations<gpu_comps> {
+private:
+    /** OpenCL Platform */
+    cl::Platform platform;
+    /** OpenCL Device */
+    cl::Device device;
+    /** OpenCL Context */
+    cl::Context context;
+    /** OpenCL Command Queue */
+    cl::CommandQueue queue;
+    /** OpenCL Program */
+    cl::Program program;
+
+public:
+    /**
+     * Constructor
+     * Initializes OpenCL overhead
+     */
+    gpu_comps();
+
     /**
      * TODO: what does this do?
      * This is an actual implementation of the "abstract" function in the base class
@@ -23,12 +44,12 @@ class gpu_comps : public computations<gpu_comps> {
      * @param arr Array
      */
     template<typename exec_policy>
-    static void sort(exec_policy policy, std::vector<decimal> &arr) {
+    void sort(exec_policy policy, std::vector<decimal> &arr) {
         /* TODO: implement GPU sort */
     }
 
     /**
-     * TODO: what does this do?
+     * Compute absolute difference between each element and the median on the GPU
      * This is an actual implementation of the "abstract" function in the base class
      * This function has to be implemented in here (.h), because of the template
      * @tparam exec_policy Execution policy (std::execution::seq or std::execution::par)
@@ -38,8 +59,25 @@ class gpu_comps : public computations<gpu_comps> {
      * @return Absolute difference between each element and the median
      */
     template<typename exec_policy>
-    static void compute_abs_diff(exec_policy policy, const std::vector<decimal> &arr, decimal median, std::vector<decimal> &diff) {
-        /* TODO: implement GPU absolute difference */
+    void compute_abs_diff(exec_policy policy, const std::vector<decimal> &arr, decimal median, std::vector<decimal> &diff) {
+        const auto n = arr.size();
+
+        /* Create buffers */
+        cl::Buffer buffer_arr(this->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * n, const_cast<decimal *>(arr.data()));
+        cl::Buffer buffer_diff(this->context, CL_MEM_WRITE_ONLY, sizeof(decimal) * n);
+
+        /* Prepare kernel and arguments */
+        cl::Kernel kernel(this->program, "abs_diff");
+        kernel.setArg(0, buffer_arr);
+        kernel.setArg(1, buffer_diff);
+        kernel.setArg(2, median);
+
+        /* Execute kernel */
+        this->queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(n));
+        this->queue.finish();
+
+        /* Read result */
+        this->queue.enqueueReadBuffer(buffer_diff, CL_TRUE, 0, sizeof(decimal) * n, diff.data());
     }
 
     /**
@@ -53,79 +91,7 @@ class gpu_comps : public computations<gpu_comps> {
      * @param sum_sq Sum of squares of the array elements
      */
     template<typename exec_policy>
-    static void compute_sums(exec_policy policy, const std::vector<decimal> &arr, decimal &sum, decimal &sum_sq) {
+    void compute_sums(exec_policy policy, const std::vector<decimal> &arr, decimal &sum, decimal &sum_sq) {
         /* TODO: implement GPU sum and sum of squares */
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename potomek>
-class predek {
-public:
-    void compute_vse(int arg1, int arg2) {
-        static_cast<potomek *>(this)->implementace(arg1, arg2);
-    }
-};
-
-class cpu : predek<cpu> {
-public:
-    void implementace(int arg1, int arg2) {
-        ...; /* pouzije pouze arg1 */
-    }
-};
-
-class gpu : predek<gpu> {
-public:
-    void implementace(int arg1, int arg2) {
-        ...; /* pouzije pouze arg2 */
-    }
-};
-
-/* Z venku */
-
-int main() {
-    std::variant<cpu, gpu> type_of_computation;
-    if (gpu) {
-        type_of_computation = gpu();
-    }
-    else {
-        type_of_computation = cpu();
-    }
-
-    std::visit(
-            ... -> type_of_computation.compute_vse(arg1, arg2);
-            );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-

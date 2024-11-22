@@ -26,7 +26,7 @@ include_directories(lib)
 
 # Drawing library files from https://github.com/SmartCGMS/common.git
 set(
-    drawing
+    drawing_lib
     lib/drawing/Drawing.cpp
     lib/drawing/Drawing.h
     lib/drawing/IRenderer.h
@@ -53,7 +53,7 @@ add_executable(
     src/calculations/gpu/gpu.cpp
     src/calculations/gpu/gpu_comps.cpp
     src/calculations/gpu/gpu_comps.h
-    ${drawing}
+    ${drawing_lib}
     src/my_drawing/svg_generator.h
     src/my_drawing/svg_generator.cpp
 )
