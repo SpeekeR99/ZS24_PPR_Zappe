@@ -10,6 +10,7 @@
 
 /* This, and the arg parser, are the only files where I found OOP to be useful */
 
+/** Local size for the sum reduce kernel */
 constexpr size_t local_size = 256;
 
 /**
@@ -36,6 +37,12 @@ public:
      * Initializes OpenCL overhead
      */
     gpu_comps();
+
+    /**
+     * Get GPU information
+     * @return String with GPU information
+     */
+    std::string get_gpu_info();
 
     /**
      * Uses merge kernel to sort the array on the GPU

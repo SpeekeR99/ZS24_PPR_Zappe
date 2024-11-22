@@ -6,8 +6,8 @@
 #include "utils/arg_parser.h"
 #include "dataloader/dataloader.h"
 #include "calculations/cpu/cpu_comps.h"
-#include "calculations/gpu/gpu.h"
-#include "my_drawing//svg_generator.h"
+#include "calculations/gpu/gpu_comps.h"
+#include "my_drawing/svg_generator.h"
 
 /**
  * Parses the arguments using the arg_parser class
@@ -24,6 +24,7 @@ std::map<std::string, std::string> parse_args(int argc, char **argv) {
     parser.add_option(option("-n", "Number of chunks to split the data into (granularity for graphs) (default: 1)", true, false));
     parser.add_option(option("--par", "Use parallel computation (serial by default)", false, false));
     parser.add_option(option("--vec", "Use vectorized computation (sequential by default)", false, false));
+    parser.add_option(option("--gpu", "Use GPU computation (CPU by default)", false, false));
     parser.add_option(option("--all", "Use all available policies combinations (used for graphs)", false, false));
     parser.add_option(option("-h", "Print this help message", false, false));
     parser.add_option(option("--help", "Print this help message", false, false));
@@ -62,7 +63,7 @@ std::vector<std::string> get_files(std::map<std::string, std::string> &args) {
  * @param policy Policy for parallel and vectorized computation
  * @param comp Computation (sequential or vectorized)
  */
-void choose_policies(std::map<std::string, std::string> &args, bool all, std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> &policy, std::variant<seq_comp, vec_comp> &comp) {
+void choose_policies(std::map<std::string, std::string> &args, std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> &policy, std::variant<seq_comp, vec_comp, gpu_comps> &comp, bool gpu, bool all) {
     /* Policy for parallel and vectorized computation */
     std::string policy_p = "ser";
     std::string policy_v = "seq";
@@ -73,9 +74,11 @@ void choose_policies(std::map<std::string, std::string> &args, bool all, std::va
 
     if (all)
         policy_p = "par";  /* For the parallel data load */
-    else
+    else if (!gpu)
         std::cout << "Using " << (policy_p == "ser" ? "serial " : "parallel ")
                   << (policy_v == "seq" ? "sequential " : "vectorized ") << "computation..." << std::endl;
+    else
+        std::cout << "Using GPU computation..." << std::endl;
 
     /* Choose execution policy */
     policy = std::execution::seq;
@@ -86,6 +89,8 @@ void choose_policies(std::map<std::string, std::string> &args, bool all, std::va
     comp = seq_comp();
     if (policy_v == "vec")
         comp = vec_comp();
+    if (gpu)
+        comp = gpu_comps();
 }
 
 /**
@@ -97,7 +102,7 @@ void choose_policies(std::map<std::string, std::string> &args, bool all, std::va
  * @param policy Policy for parallel and vectorized computation
  * @param comp Computation (sequential or vectorized)
  */
-void execute_computations_for_repetitions(patient_data &data, size_t num_data_points, size_t repetitions, std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy, std::variant<seq_comp, vec_comp> comp) {
+void execute_computations_for_repetitions(patient_data &data, size_t num_data_points, size_t repetitions, std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy, std::variant<seq_comp, vec_comp, gpu_comps> comp) {
     /* For each repetition -- purpose for median of the measured times (3 hard coded as X, Y, Z) */
     std::vector<std::vector<long long int>> measured_times(3, std::vector<long long int>(repetitions));
     std::vector<std::vector<decimal>> mads(3, std::vector<decimal>(repetitions));
@@ -155,7 +160,6 @@ void execute_computations_for_repetitions(patient_data &data, size_t num_data_po
         const auto mad_med = (mads[i][mads[i].size() / 2] + mads[i][(mads[i].size() - 1) / 2]) / 2.0;
         const auto coef_var_med = (coef_vars[i][coef_vars[i].size() / 2] + coef_vars[i][(coef_vars[i].size() - 1) / 2]) / 2.0;
 
-        std::cout << "Medians:" << std::endl;
         std::cout << "Mean absolute deviation: " << mad_med << std::endl;
         std::cout << "Coefficient of variation: " << coef_var_med << std::endl;
         std::cout << "Time taken " << computed_in_med << "ms" << std::endl;
@@ -171,7 +175,7 @@ void execute_computations_for_repetitions(patient_data &data, size_t num_data_po
  * @param comp Computation (sequential or vectorized)
  * @param all Whether all policy combinations should be used (--all flag)
  */
-void execute_computations(std::vector<std::string> files, size_t repetitions, size_t num_chunks, std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy, std::variant<seq_comp, vec_comp> comp, bool all) {
+void execute_computations(std::vector<std::string> files, size_t repetitions, size_t num_chunks, std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy, std::variant<seq_comp, vec_comp, gpu_comps> comp, bool all) {
     /* For each file we are processing */
     for (auto &file : files) {
         /* Load the data */
@@ -210,6 +214,8 @@ void execute_computations(std::vector<std::string> files, size_t repetitions, si
                 execute_computations_for_repetitions(data, num_data_points, repetitions, std::execution::par, seq_comp());
                 std::cout << "Parallel vectorized computation..." << std::endl;
                 execute_computations_for_repetitions(data, num_data_points, repetitions, std::execution::par, vec_comp());
+                std::cout << "GPU computation..." << std::endl;
+                execute_computations_for_repetitions(data, num_data_points, repetitions, std::execution::seq, gpu_comps());
             } else {  /* If only one policy is used, go straight to repetitions */
                 execute_computations_for_repetitions(data, num_data_points, repetitions, policy, comp);
             }
@@ -224,39 +230,40 @@ void execute_computations(std::vector<std::string> files, size_t repetitions, si
  * @return Exit code
  */
 int main(int argc, char **argv) {
-//    /* Parse the arguments */
-//    auto args = parse_args(argc, argv);
-//
-//    /* User arguments were valid, let him know about single / double precision */
-//    std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
-//
-//    /* Filepath to the data file(s) */
-//    auto files = get_files(args);
-//
-//    /* Number of repetitions and chunks */
-//    const size_t repetitions = args.find("-r") != args.end() ? std::stoi(args["-r"]) : 1;
-//    const size_t num_chunks = args.find("-n") != args.end() ? std::stoi(args["-n"]) : 1;
-//
-//    /* Choose the policies for computations */
-//    std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy;
-//    std::variant<seq_comp, vec_comp> comp;
-//    bool all = args.find("--all") != args.end();
-//    choose_policies(args, all, policy, comp);
-//
-//    /* Prepare res directory for the plots, if it does not exist */
-//    if (!std::filesystem::exists("res"))
-//        std::filesystem::create_directory("res");
-//
-//    /*
-//     * Execute the computations:
-//     * For each file, load the data
-//     * For each split chunk of the data (purpose: graphs -- lines X points)
-//     * Now branching: if all is true, for each policy combination (purpose: graphs -- more lines)
-//     *                else for the chosen policy combination by the user
-//     * For each repetition, (deep) copy the data (purpose: median of the measured times)
-//     * For each vector X, Y, Z from the data, finally compute the MAD and CV
-//     */
-//    execute_computations(files, repetitions, num_chunks, policy, comp, all);
+    /* Parse the arguments */
+    auto args = parse_args(argc, argv);
+
+    /* User arguments were valid, let him know about single / double precision */
+    std::cout << "Using " << (sizeof(decimal)) << "-byte floating point numbers..." << std::endl << std::endl;
+
+    /* Filepath to the data file(s) */
+    auto files = get_files(args);
+
+    /* Number of repetitions and chunks */
+    const size_t repetitions = args.find("-r") != args.end() ? std::stoi(args["-r"]) : 1;
+    const size_t num_chunks = args.find("-n") != args.end() ? std::stoi(args["-n"]) : 1;
+
+    /* Choose the policies for computations */
+    std::variant<std::execution::sequenced_policy, std::execution::parallel_policy> policy;
+    std::variant<seq_comp, vec_comp, gpu_comps> comp;
+    bool gpu = args.find("--gpu") != args.end();
+    bool all = args.find("--all") != args.end();
+    choose_policies(args, policy, comp, gpu, all);
+
+    /* Prepare res directory for the plots, if it does not exist */
+    if (!std::filesystem::exists("res"))
+        std::filesystem::create_directory("res");
+
+    /*
+     * Execute the computations:
+     * For each file, load the data
+     * For each split chunk of the data (purpose: graphs -- lines X points)
+     * Now branching: if all is true, for each policy combination (purpose: graphs -- more lines)
+     *                else for the chosen policy combination by the user
+     * For each repetition, (deep) copy the data (purpose: median of the measured times)
+     * For each vector X, Y, Z from the data, finally compute the MAD and CV
+     */
+    execute_computations(files, repetitions, num_chunks, policy, comp, all);
 
 //    /* Example plot for my future self */
 //    std::vector<double> x = {0, 1, 2, 3, 4, 5};
@@ -269,51 +276,6 @@ int main(int argc, char **argv) {
 //    std::vector<std::string> labels = {"y1", "y2"};
 //
 //    plot_line_chart("res/test.svg", x_values_list, y_values_list, "Test Chart", "X", "Y", labels);
-
-    auto platform = init_platform();
-    auto device = init_device(platform);
-    auto context = cl::Context(device);
-    auto queue = cl::CommandQueue(context, device);
-
-    auto program = load_program(context, device, kernel_source);
-
-    size_t n = 100000; // Vector size
-    std::vector<double> arr(n, 2.0); // Example vector with all elements as 1.0
-    std::vector<double> sums((n + 255) / 256); // Partial results buffer
-    std::vector<double> sums_sq((n + 255) / 256); // Partial results buffer
-
-    // Create OpenCL buffers
-    cl::Buffer buffer_arr(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(double) * n, arr.data());
-    cl::Buffer buffer_sums(context, CL_MEM_READ_WRITE, sizeof(double) * sums.size());
-    cl::Buffer buffer_sums_sq(context, CL_MEM_READ_WRITE, sizeof(double) * sums_sq.size());
-
-    // Create and execute the kernel
-    cl::Kernel kernel_reduce_sum(program, "reduce_sum");
-    size_t local_size = 256;
-    size_t global_size = ((n + local_size - 1) / local_size) * local_size;
-
-    kernel_reduce_sum.setArg(0, buffer_arr);
-    kernel_reduce_sum.setArg(1, buffer_sums);
-    kernel_reduce_sum.setArg(2, buffer_sums_sq);
-    kernel_reduce_sum.setArg(3, static_cast<int>(n));
-
-    queue.enqueueNDRangeKernel(kernel_reduce_sum, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
-    queue.finish();
-
-    // Read back the partial sums
-    queue.enqueueReadBuffer(buffer_sums, CL_TRUE, 0, sizeof(double) * sums.size(), sums.data());
-    queue.enqueueReadBuffer(buffer_sums_sq, CL_TRUE, 0, sizeof(double) * sums_sq.size(), sums_sq.data());
-
-    // Final sum on the host
-    double total_sum = 0.0;
-    double total_sum_sq = 0.0;
-    for (size_t i = 0; i < sums.size(); i++) {
-        total_sum += sums[i];
-        total_sum_sq += sums_sq[i];
-    }
-
-    std::cout << "Total Sum: " << total_sum << std::endl;
-    std::cout << "Total Sum of Squares: " << total_sum_sq << std::endl;
 
     return EXIT_SUCCESS;
 }
