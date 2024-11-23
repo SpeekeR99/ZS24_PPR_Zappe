@@ -31,15 +31,18 @@ cl::Device init_device(cl::Platform &platform) {
     return devices.front();
 }
 
-cl::Program load_program(cl::Context &context, cl::Device &device, const std::string &kernel_source) {
+cl::Program load_program(cl::Context &context, cl::Device &device, const std::string &_kernel_source) {
     /* Create program from source */
-    cl::Program program(context, kernel_source);
+    cl::Program program(context, _kernel_source);
 
     /* Try to build it */
     try {
         program.build({device});
+        if (program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device) != CL_BUILD_SUCCESS)
+            std::cerr << "Build Log:\n" << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
     } catch (const std::exception &e) {
         std::cerr << "Build Log:\n" << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
+        std::cerr << "Build error: " << e.what() << std::endl;
         throw std::runtime_error("Failed to build OpenCL program");
     }
 

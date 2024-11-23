@@ -9,9 +9,9 @@
 /** Padding for the plot */
 constexpr size_t padding = 50;
 /** Canvas width */
-constexpr size_t canvas_width = 800.0;
+constexpr size_t canvas_width = 800;
 /** Canvas height */
-constexpr size_t canvas_height = 600.0;
+constexpr size_t canvas_height = 600;
 /** Plot area width */
 constexpr size_t plot_width = canvas_width - 2 * padding;
 /** Plot area height */
@@ -20,23 +20,23 @@ constexpr size_t plot_height = canvas_height - 2 * padding;
 constexpr size_t num_ticks = 10;
 
 /** White color */
-constexpr size_t white = 0xffffff;
+constexpr uint32_t white = 0xffffff;
 /** Gray color (grid) */
-constexpr size_t gray = 0xc8c8c8;
+constexpr uint32_t gray = 0xc8c8c8;
 /** Black color */
-constexpr size_t black = 0x000000;
+constexpr uint32_t black = 0x000000;
 /** Red color */
-constexpr size_t red = 0xff0000;
+constexpr uint32_t red = 0xff0000;
 /** Green color */
-constexpr size_t green = 0x00ff00;
+constexpr uint32_t green = 0x00ff00;
 /** Blue color */
-constexpr size_t blue = 0x0000ff;
+constexpr uint32_t blue = 0x0000ff;
 /** Magenta color */
-constexpr size_t magenta = 0xff00ff;
+constexpr uint32_t magenta = 0xff00ff;
 /** Cyan color */
-constexpr size_t cyan = 0x00ffff;
+constexpr uint32_t cyan = 0x00ffff;
 /** Yellow color */
-constexpr size_t yellow = 0xffff00;
+constexpr uint32_t yellow = 0xffff00;
 
 /**
  * Uses the SVGRenderer.h from https://github.com/SmartCGMS/common.git

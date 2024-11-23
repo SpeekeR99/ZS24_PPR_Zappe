@@ -9,6 +9,9 @@
 
 #include "utils/utils.h"
 
+/* Disabling C4996 warning, because I know what I am doing with the old C functions like fopen, strtok, etc. */
+#pragma warning(disable : 4996)
+
 /** Max byte value */
 constexpr size_t max_byte_value = 256;
 /** 1 KB */

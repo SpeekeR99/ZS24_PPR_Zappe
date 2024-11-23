@@ -218,7 +218,7 @@ cl::Device init_device(cl::Platform &platform);
  * Load OpenCL program from source and build it
  * @param context Context
  * @param device Device
- * @param kernel_source Kernel source code
+ * @param _kernel_source Kernel source code
  * @return OpenCL program
  */
-cl::Program load_program(cl::Context &context, cl::Device &device, const std::string &kernel_source);
+cl::Program load_program(cl::Context &context, cl::Device &device, const std::string &_kernel_source);

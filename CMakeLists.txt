@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 # Set compiler specific flags
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Flags for MSVC
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /arch:AVX2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /arch:AVX2")
     # This is how you can compile with single precision instead of double precision
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /openmp /arch:AVX2 /D_USE_FLOAT")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

@@ -56,6 +56,8 @@ public:
      */
     template<typename exec_policy>
     void sort(exec_policy policy, std::vector<decimal> &arr) {
+        (void) policy;  /* Supress warning about unused policy */
+
         const auto n = arr.size();
 
         /* Create buffers */
@@ -99,6 +101,8 @@ public:
      */
     template<typename exec_policy>
     void compute_abs_diff(exec_policy policy, const std::vector<decimal> &arr, decimal median, std::vector<decimal> &diff) {
+        (void) policy;  /* Supress warning about unused policy */
+
         const auto n = arr.size();
 
         /* Create buffers */
@@ -131,6 +135,8 @@ public:
      */
     template<typename exec_policy>
     void compute_sums(exec_policy policy, const std::vector<decimal> &arr, decimal &sum, decimal &sum_sq) {
+        (void) policy;  /* Supress warning about unused policy */
+
         const auto n = arr.size();
 
         /* Partial results buffer -- equivalent to local_sums in my CPU implementation */

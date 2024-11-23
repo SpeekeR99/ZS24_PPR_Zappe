@@ -92,7 +92,7 @@ void render_line_chart(
     }
 
     /* Prepare colors for each line */
-    std::vector<size_t> colors = {red, green, blue, magenta, cyan, yellow};
+    std::vector<uint32_t> colors = {red, green, blue, magenta, cyan, yellow};
 
     /* Plot each line */
     for (size_t line_index = 0; line_index < x_values_list.size(); ++line_index) {
@@ -114,7 +114,7 @@ void render_line_chart(
             polyline.Add_Point(point.first, point.second);
 
         /* Choose the color for the current line and render it */
-        size_t color = colors[line_index % colors.size()];
+        uint32_t color = colors[line_index % colors.size()];
         polyline.Set_Stroke_Color(RGBColor::From_UInt32(color));
         polyline.Set_Fill_Opacity(0.0);
         polyline.Set_Stroke_Width(2.0);
