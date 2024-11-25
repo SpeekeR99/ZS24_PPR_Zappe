@@ -2,7 +2,9 @@
 
 #include <iostream>
 #include <vector>
+#include <fstream>
 #include <string>
+#include <sstream>
 #include <cstring>
 
 #include <execution>
@@ -31,6 +33,13 @@ struct patient_data {
     /** Z data */
     std::vector<decimal> z;
 };
+
+/**
+ * Load data from a file using the standard C++ I/O functions (std::ifstream, std::getline)
+ * @param filepath Path to the file
+ * @param data Data structure to store the loaded data
+ */
+void load_data(const std::string &filepath, patient_data &data);
 
 /**
  * Load data from a file using the standard ANSI C I/O functions (fopen, fscanf, fclose)
@@ -113,25 +122,23 @@ void load_data_parallel(exec_policy policy, const std::string &filepath, patient
         char line[max_byte_value];
         /* Parse the lines */
         for (size_t j = start; j < end; j++) {
+            /* Copy the line to a buffer */
             strncpy(line, lines[j].data(), lines[j].size());
-            line[lines[j].size()] = '\0';  /* Null-terminate for strtok */
+            char *line_ptr = line;
 
-            /* Split the line manually */
-            strtok(line, ",");  /* Skip first token -- datetime */
+            /* Find the end of the datetime and move to the numeric data */
+            while (*line_ptr && *line_ptr != ',')
+                line_ptr++;
+            line_ptr++; /* Skip comma */
 
-            /*
-             * Parse x, y, z values directly
-             * When using strtod or std::strtod here, the parallel version gets progressively
-             * slower with the number of threads used -- I have no idea why, but atof saved the day
-             */
-            char *token = strtok(nullptr, ",");
-            data.x[j] = atof(token);
+            /* Parse x, y, z values directly */
+            data.x[j] = std::strtod(line_ptr, &line_ptr);
+            line_ptr++; /* Skip comma */
 
-            token = strtok(nullptr, ",");
-            data.y[j] = atof(token);
+            data.y[j] = std::strtod(line_ptr, &line_ptr);
+            line_ptr++; /* Skip comma */
 
-            token = strtok(nullptr, ",");
-            data.z[j] = atof(token);
+            data.z[j] = std::strtod(line_ptr, &line_ptr);
         }
     });
 

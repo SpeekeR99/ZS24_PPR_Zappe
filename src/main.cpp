@@ -187,6 +187,8 @@ void execute_computations_for_repetitions(
         results.emplace_back(coef_var_med);
         results.emplace_back(computed_in_med);
     }
+
+    std::cout << std::endl;
 }
 
 /**
@@ -199,6 +201,10 @@ void execute_computations_for_repetitions(
  */
 void plot_results(const std::vector<double> &results, const std::vector<double> &batches, bool all) {
     std::cout << "Plotting the results..." << std::endl;
+
+    /* Prepare res directory for the plots, if it does not exist */
+    if (!std::filesystem::exists("res"))
+        std::filesystem::create_directory("res");
 
     /* Plot the results */
     if (all) {
@@ -340,7 +346,7 @@ void execute_computations(
                 std::cout << "Parallel vectorized computation..." << std::endl;
                 execute_computations_for_repetitions(data, num_data_points, repetitions, std::execution::par, vec_comp(), results);
                 std::cout << "GPU computation..." << std::endl;
-                execute_computations_for_repetitions(data, num_data_points, repetitions, std::execution::seq, gpu_comps(), results);
+                execute_computations_for_repetitions(data, num_data_points, repetitions, std::execution::par, gpu_comps(), results);
             } else {  /* If only one policy is used, go straight to repetitions */
                 execute_computations_for_repetitions(data, num_data_points, repetitions, policy, comp, results);
             }
@@ -374,10 +380,6 @@ int main(int argc, char **argv) {
     bool gpu = args.find("--gpu") != args.end();
     bool all = args.find("--all") != args.end();
     choose_policies(args, policy, comp, gpu, all);
-
-    /* Prepare res directory for the plots, if it does not exist */
-    if (!std::filesystem::exists("res"))
-        std::filesystem::create_directory("res");
 
     /* Prepare structures to save the results for later plotting */
     std::vector<double> results;

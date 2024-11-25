@@ -1,5 +1,44 @@
 #include "dataloader/dataloader.h"
 
+void load_data(const std::string &filepath, patient_data &data) {
+    /* Open the file */
+    std::ifstream in_fp(filepath);
+    if (!in_fp) {
+        std::cerr << "Error opening file: " << filepath << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    /* Clean the data */
+    data.x.clear();
+    data.y.clear();
+    data.z.clear();
+
+    /* Skip header */
+    std::string line;
+    std::getline(in_fp, line);
+
+    /* Read the data */
+    std::string datetime;
+    decimal x, y, z;
+
+    while (std::getline(in_fp, line)) {
+        std::stringstream ss(line);
+        std::getline(ss, datetime, ',');
+        ss >> x;
+        ss.ignore(1, ',');
+        ss >> y;
+        ss.ignore(1, ',');
+        ss >> z;
+
+        data.x.push_back(x);
+        data.y.push_back(y);
+        data.z.push_back(z);
+    }
+
+    /* Close the file */
+    in_fp.close();
+}
+
 void load_data_fast(const std::string& filepath, patient_data &data) {
     /* Open the file */
     FILE *in_fp = fopen(filepath.c_str(), "r");

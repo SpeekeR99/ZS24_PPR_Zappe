@@ -9,6 +9,8 @@
 #include "calculations/gpu/gpu.h"
 #include "utils/utils.h"
 
+#include <execution>
+
 /* This, and the arg parser, are the only files where I found OOP to be useful */
 
 /** Local size for the sum reduce kernel */
@@ -67,13 +69,15 @@ public:
         /* Prepare kernel */
         cl::Kernel kernel_merge_sort(this->program, "merge");
 
+        /* Set kernel persistent arguments */
+        kernel_merge_sort.setArg(0, buffer_arr);
+        kernel_merge_sort.setArg(1, buffer_temp);
+        kernel_merge_sort.setArg(3, static_cast<int>(n));
+
         /* Iterate over the array with increasing sub-array sizes (stride) */
         for (size_t size = 1; size < arr.size(); size *= 2) {
-            /* Set kernel arguments */
-            kernel_merge_sort.setArg(0, buffer_arr);
-            kernel_merge_sort.setArg(1, buffer_temp);
+            /* Set kernel variable arguments */
             kernel_merge_sort.setArg(2, static_cast<int>(size));
-            kernel_merge_sort.setArg(3, static_cast<int>(n));
 
             /* Calculate global size */
             size_t global_size = (n + 2 * size - 1) / (2 * size);
