@@ -76,14 +76,16 @@ public:
 
         /* Iterate over the array with increasing sub-array sizes (stride) */
         for (size_t size = 1; size < arr.size(); size *= 2) {
-            /* Set kernel variable arguments */
             kernel_merge_sort.setArg(2, static_cast<int>(size));
 
-            /* Calculate global size */
-            size_t global_size = (n + 2 * size - 1) / (2 * size);
+            /* Calculate number of sub-arrays */
+            const size_t num_sub_arrays = (n + 2 * size - 1) / (2 * size);
+
+            /* Adjust global size */
+            const size_t global_size = ((num_sub_arrays + local_size - 1) / local_size) * local_size;
 
             /* Execute kernel */
-            this->queue.enqueueNDRangeKernel(kernel_merge_sort, cl::NullRange, cl::NDRange(global_size), cl::NullRange);
+            this->queue.enqueueNDRangeKernel(kernel_merge_sort, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
             this->queue.finish();
         }
 

@@ -6,13 +6,13 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Set compiler specific flags
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    # Flags for MSVC
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /arch:AVX2")
+    # Flags for MSVC - /W4 for warnings; /arch:AVX2 for AVX2; /Qvec- to disable auto-vectorization
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /arch:AVX2 /Qvec-")
     # This is how you can compile with single precision instead of double precision
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /openmp /arch:AVX2 /D_USE_FLOAT")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # Flags for GCC/Clang
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -ltbb -mavx2")
+    # Flags for GCC/Clang - -W* for warnings; -mavx2 for AVX2; -no-vec to disable auto-vectorization
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -ltbb -mavx2 -no-vec")
     # This is how you can compile with single precision instead of double precision
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -fopenmp -mavx2 -D_USE_FLOAT")
 endif()

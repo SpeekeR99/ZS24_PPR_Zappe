@@ -15,36 +15,40 @@ constexpr char kernel_source[] = R"(
  * @param size Sub-array size (stride)
  * @param n Array size
  */
-__kernel void merge(__global double *arr, __global double *temp, int size, int n) {
+__kernel void merge(__global double *arr, __global double *temp, const int size, const int n) {
     /* Get index */
     int gid = get_global_id(0);
 
-    /* Equivalent of CPU sort 'for (size_t left = 0; left < arr.size(); left += 2 * size)' */
-    int left = gid * size * 2;
+    /* Calculate the total number of sub-arrays */
+    const int num_sub_arrays = (n + 2 * size - 1) / (2 * size);
 
-    /* Mid and right indices could be out of bounds */
-    int mid = min(left + size, n);
-    int right = min(left + 2 * size, n);
+    /* Each work item processes multiple sub-arrays */
+    for (int idx = gid; idx < num_sub_arrays; idx += get_global_size(0)) {
+        /* Calculate indices for this sub-array */
+        int left = idx * size * 2;
+        int mid = min(left + size, n);
+        int right = min(left + 2 * size, n);
 
-    /* Copy data to temp */
-    for (int i = left; i < right; i++)
-        temp[i] = arr[i];
+        /* Copy data to temp */
+        for (int i = left; i < right; i++)
+            temp[i] = arr[i];
 
-    /* Synchronize */
-    barrier(CLK_GLOBAL_MEM_FENCE);
+        /* Synchronize */
+        barrier(CLK_GLOBAL_MEM_FENCE);
 
-    /* Pointers to be moved around */
-    int l = left, r = mid, t = left;
+        /* Pointers to be moved around */
+        int l = left, r = mid, t = left;
 
-    /* Merge two sorted sub-arrays */
-    while (l < mid && r < right)
-        arr[t++] = temp[l] <= temp[r] ? temp[l++] : temp[r++];
+        /* Merge two sorted sub-arrays */
+        while (l < mid && r < right)
+            arr[t++] = temp[l] <= temp[r] ? temp[l++] : temp[r++];
 
-    /* Copy the rest if there are any */
-    while (l < mid)
-        arr[t++] = temp[l++];
-    while (r < right)
-        arr[t++] = temp[r++];
+        /* Copy the rest if there are any */
+        while (l < mid)
+            arr[t++] = temp[l++];
+        while (r < right)
+            arr[t++] = temp[r++];
+    }
 }
 
 /**
