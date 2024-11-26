@@ -199,87 +199,134 @@ void execute_computations_for_repetitions(
  * @param batches Batches for the X axis
  * @param all All policy combinations used (--all flag)
  */
-void plot_results(const std::vector<double> &results, const std::vector<double> &batches, bool all) {
+void plot_results(const std::vector<double> &results, const std::vector<double> &batches, const std::vector<std::string> &files, bool all) {
     std::cout << "Plotting the results..." << std::endl;
 
     /* Prepare res directory for the plots, if it does not exist */
     if (!std::filesystem::exists("res"))
         std::filesystem::create_directory("res");
 
-    /* Plot the results */
-    if (all) {
-        /* 5 results for each data point (SerSeq, SerVec, ParSeq, ParVec, GPU) */
-        const std::vector<std::string> labels = {"SerSeq", "SerVec", "ParSeq", "ParVec", "GPU"};
-        /* 3 results per data point (X, Y, Z) */
-        const std::vector<std::string> sub_labels = {"X", "Y", "Z"};
+    /* Plot the results for each file */
+    for (size_t i = 0; i < files.size(); i++) {
+        if (all) {
+            /* 5 results for each data point (SerSeq, SerVec, ParSeq, ParVec, GPU) */
+            const std::vector<std::string> labels = {"SerSeq", "SerVec", "ParSeq", "ParVec", "GPU"};
+            /* 3 results per data point (X, Y, Z) */
+            const std::vector<std::string> sub_labels = {"X", "Y", "Z"};
 
-        /* Extract the results for each data point */
-        std::vector<std::vector<std::vector<double>>> mads(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
-        std::vector<std::vector<std::vector<double>>> cvs(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
-        std::vector<std::vector<std::vector<double>>> times(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
-        for (size_t i = 0, j = 0; i < results.size(); i += sub_labels.size() * 3, j = ++j % labels.size()) {
-            for (size_t k = 0; k < sub_labels.size(); k++) {
-                mads[j][k].emplace_back(results[i + k * 3]);
-                cvs[j][k].emplace_back(results[i + k * 3 + 1]);
-                times[j][k].emplace_back(results[i + k * 3 + 2]);
+            /* Extract the results for each data point */
+            std::vector<std::vector<std::vector<double>>> mads(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
+            std::vector<std::vector<std::vector<double>>> cvs(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
+            std::vector<std::vector<std::vector<double>>> times(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
+            for (size_t j = i * results.size() / files.size(), k = 0; j < results.size() / files.size(); j += sub_labels.size() * 3, k = ++k % labels.size()) {
+                for (size_t l = 0; l < sub_labels.size(); l++) {
+                    mads[k][l].emplace_back(results[j + l * 3]);
+                    cvs[k][l].emplace_back(results[j + l * 3 + 1]);
+                    times[k][l].emplace_back(results[j + l * 3 + 2]);
+                }
             }
-        }
 
-        /* Create names for the plots */
-        const auto now = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+            /* Create names for the plots */
+            const auto now = std::chrono::system_clock::now();
+            const time_t time = std::chrono::system_clock::to_time_t(now);
+            const std::tm *local_time = std::localtime(&time);
+            std::ostringstream oss;
+            oss << std::put_time(local_time, "%Y-%m-%d_%H-%M-%S");
+            const auto today = oss.str();
 
-        /* Plot the results separately for X, Y, Z */
-        for (size_t i = 0; i < sub_labels.size(); i++) {
-            /* Create the names for real now */
-            const auto name_times = "res/times_" + sub_labels[i] + "_" + now + ".svg";
-            const auto name_mads = "res/mads_" + sub_labels[i] + "_" + now + ".svg";
-            const auto name_cvs = "res/cvs_" + sub_labels[i] + "_" + now + ".svg";
+            std::string file = files[i];
+            /* Take last token after "/" */
+            if (file.find('/') != std::string::npos)
+                file = file.substr(file.find_last_of('/') + 1);
+            /* Throw away the extension */
+            if (file.find('.') != std::string::npos)
+                file = file.substr(0, file.find('.'));
+
+            /* Create directory for each file */
+            if (!std::filesystem::exists("res/" + file))
+                std::filesystem::create_directory("res/" + file);
+
+            const auto dir = "res/" + file + "/";
+
+            /* Plot the results separately for X, Y, Z */
+            for (size_t j = 0; j < sub_labels.size(); j++) {
+                /* Create the names for real now */
+                std::string name_times = dir;
+                std::string name_mads = dir;
+                std::string name_cvs = dir;
+                name_times.append(today).append("_").append(sub_labels[j]).append("_times.svg");
+                name_mads.append(today).append("_").append(sub_labels[j]).append("_mads.svg");
+                name_cvs.append(today).append("_").append(sub_labels[j]).append("_cvs.svg");
+
+                /* Plot the results */
+                auto title = "Time taken for computation (" + sub_labels[j] + ")";
+                std::vector<std::vector<double>> x_values_list = {batches, batches, batches, batches, batches};
+                std::vector<std::vector<double>> y_values_list = {times[0][j], times[1][j], times[2][j], times[3][j], times[4][j]};
+                plot_line_chart(name_times, x_values_list, y_values_list, title, "Data batch size", "Time (ms)", labels);
+
+                title = "Mean Absolute Deviation (" + sub_labels[j] + ")";
+                y_values_list = {mads[0][j], mads[1][j], mads[2][j], mads[3][j], mads[4][j]};
+                plot_line_chart(name_mads, x_values_list, y_values_list, title, "Data batch size", "MAD", labels);
+
+                title = "Coefficient of Variation (" + sub_labels[j] + ")";
+                y_values_list = {cvs[0][j], cvs[1][j], cvs[2][j], cvs[3][j], cvs[4][j]};
+                plot_line_chart(name_cvs, x_values_list, y_values_list, title, "Data batch size", "CV", labels);
+            }
+            /* If only one policy is used, plot the results for X, Y, Z instead */
+        } else {
+            /* 3 results for each data point (X, Y, Z) */
+            const std::vector<std::string> labels = {"X", "Y", "Z"};
+
+            /* Extract the results for each data point */
+            std::vector<std::vector<double>> mads(labels.size());
+            std::vector<std::vector<double>> cvs(labels.size());
+            std::vector<std::vector<double>> times(labels.size());
+            for (size_t j = i * results.size() / files.size(), k = 0; j < results.size() / files.size(); j += labels.size(), k = ++k % labels.size()) {
+                mads[k].emplace_back(results[j]);
+                cvs[k].emplace_back(results[j + 1]);
+                times[k].emplace_back(results[j + 2]);
+            }
+
+            /* Create names for the plots */
+            const auto now = std::chrono::system_clock::now();
+            const time_t time = std::chrono::system_clock::to_time_t(now);
+            const std::tm *local_time = std::localtime(&time);
+            std::ostringstream oss;
+            oss << std::put_time(local_time, "%Y-%m-%d_%H-%M-%S");
+            const auto today = oss.str();
+
+            std::string file = files[i];
+            /* Take last token after "/" */
+            if (file.find('/') != std::string::npos)
+                file = file.substr(file.find_last_of('/') + 1);
+            /* Throw away the extension */
+            if (file.find('.') != std::string::npos)
+                file = file.substr(0, file.find('.'));
+
+            /* Create directory for each file */
+            if (!std::filesystem::exists("res/" + file))
+                std::filesystem::create_directory("res/" + file);
+
+            const auto dir = "res/" + file + "/";
+
+            std::string name_times = dir;
+            std::string name_mads = dir;
+            std::string name_cvs = dir;
+            name_times.append(today).append("_times.svg");
+            name_mads.append(today).append("_mads.svg");
+            name_cvs.append(today).append("_cvs.svg");
 
             /* Plot the results */
-            auto title = "Time taken for computation (" + sub_labels[i] + ")";
-            std::vector<std::vector<double>> x_values_list = {batches, batches, batches, batches, batches};
-            std::vector<std::vector<double>> y_values_list = {times[0][i], times[1][i], times[2][i], times[3][i], times[4][i]};
-            plot_line_chart(name_times, x_values_list, y_values_list, title, "Data batch size", "Time (ms)", labels);
+            std::vector<std::vector<double>> x_values_list = {batches, batches, batches};
+            std::vector<std::vector<double>> y_values_list = {times[0], times[1], times[2]};
+            plot_line_chart(name_times, x_values_list, y_values_list, "Time taken for computation", "Data batch size", "Time (ms)", labels);
 
-            title = "Mean Absolute Deviation (" + sub_labels[i] + ")";
-            y_values_list = {mads[0][i], mads[1][i], mads[2][i], mads[3][i], mads[4][i]};
-            plot_line_chart(name_mads, x_values_list, y_values_list, title, "Data batch size", "MAD", labels);
+            y_values_list = {mads[0], mads[1], mads[2]};
+            plot_line_chart(name_mads, x_values_list, y_values_list, "Mean Absolute Deviation", "Data batch size", "MAD", labels);
 
-            title = "Coefficient of Variation (" + sub_labels[i] + ")";
-            y_values_list = {cvs[0][i], cvs[1][i], cvs[2][i], cvs[3][i], cvs[4][i]};
-            plot_line_chart(name_cvs, x_values_list, y_values_list, title, "Data batch size", "CV", labels);
+            y_values_list = {cvs[0], cvs[1], cvs[2]};
+            plot_line_chart(name_cvs, x_values_list, y_values_list, "Coefficient of Variation", "Data batch size", "CV", labels);
         }
-        /* If only one policy is used, plot the results for X, Y, Z instead */
-    } else {
-        /* 3 results for each data point (X, Y, Z) */
-        const std::vector<std::string> labels = {"X", "Y", "Z"};
-
-        /* Extract the results for each data point */
-        std::vector<std::vector<double>> mads(labels.size());
-        std::vector<std::vector<double>> cvs(labels.size());
-        std::vector<std::vector<double>> times(labels.size());
-        for (size_t i = 0, j = 0; i < results.size(); i += labels.size(), j = ++j % labels.size()) {
-            mads[j].emplace_back(results[i]);
-            cvs[j].emplace_back(results[i + 1]);
-            times[j].emplace_back(results[i + 2]);
-        }
-
-        /* Create names for the plots */
-        const auto now = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-        const std::string name_times = "res/times_" + now + ".svg";
-        const std::string name_mads = "res/mads_" + now + ".svg";
-        const std::string name_cvs = "res/cvs_" + now + ".svg";
-
-        /* Plot the results */
-        std::vector<std::vector<double>> x_values_list = {batches, batches, batches};
-        std::vector<std::vector<double>> y_values_list = {times[0], times[1], times[2]};
-        plot_line_chart(name_times, x_values_list, y_values_list, "Time taken for computation", "Data batch size", "Time (ms)", labels);
-
-        y_values_list = {mads[0], mads[1], mads[2]};
-        plot_line_chart(name_mads, x_values_list, y_values_list, "Mean Absolute Deviation", "Data batch size", "MAD", labels);
-
-        y_values_list = {cvs[0], cvs[1], cvs[2]};
-        plot_line_chart(name_cvs, x_values_list, y_values_list, "Coefficient of Variation", "Data batch size", "CV", labels);
     }
 
     std::cout << "You can find the plots in the res directory." << std::endl;
@@ -398,7 +445,7 @@ int main(int argc, char **argv) {
 
     /* Plot the results (if the user did not specify --no_graphs flag) */
     if (args.find("--no_graphs") == args.end())
-        plot_results(results, batches, all);
+        plot_results(results, batches, files, all);
 
     return EXIT_SUCCESS;
 }
