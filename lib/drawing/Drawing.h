@@ -260,6 +260,7 @@ namespace drawing {
 			}
 
 			virtual void RenderTo(IRenderer& renderer) {
+                (void) renderer;
 			};
 	};
 

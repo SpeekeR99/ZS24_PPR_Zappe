@@ -32,7 +32,7 @@ public:
         static_cast<derived *>(this)->sort(policy, arr);
 
         /* Get the median */
-        const auto median = (arr[arr.size() / 2] + arr[(arr.size() - 1) / 2]) / 2.0;
+        const auto median = static_cast<decimal>((arr[arr.size() / 2] + arr[(arr.size() - 1) / 2]) / 2.0);
 
         /* Calculate the absolute differences from the median */
         std::vector<decimal> diff(arr.size());
@@ -52,7 +52,7 @@ public:
             curr = diff[left] >= diff[right] ? diff[right++] : diff[left--];
         }
 
-        return (arr.size() & 1) ? curr : (prev + curr) / 2.0;
+        return static_cast<decimal>((arr.size() & 1) ? curr : (prev + curr) / 2.0);
     }
 
     /**
@@ -71,6 +71,6 @@ public:
         decimal sum = 0, sum_sq = 0;
         static_cast<derived *>(this)->compute_sums(policy, arr, sum, sum_sq);
 
-        return std::sqrt((sum_sq - sum * sum / n) / n) / (sum / n);
+        return static_cast<decimal>(std::sqrt((sum_sq - sum * sum / n) / n) / (sum / n));
     }
 };
