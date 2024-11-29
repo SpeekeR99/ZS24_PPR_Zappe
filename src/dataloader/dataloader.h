@@ -132,6 +132,7 @@ void load_data_parallel(exec_policy policy, const std::string &filepath, patient
             line_ptr++; /* Skip comma */
 
             /* Parse x, y, z values directly */
+            #ifndef _USE_FLOAT
             data.x[j] = std::strtod(line_ptr, &line_ptr);
             line_ptr++; /* Skip comma */
 
@@ -139,6 +140,15 @@ void load_data_parallel(exec_policy policy, const std::string &filepath, patient
             line_ptr++; /* Skip comma */
 
             data.z[j] = std::strtod(line_ptr, &line_ptr);
+            #else
+            data.x[j] = std::strtof(line_ptr, &line_ptr);
+            line_ptr++; /* Skip comma */
+
+            data.y[j] = std::strtof(line_ptr, &line_ptr);
+            line_ptr++; /* Skip comma */
+
+            data.z[j] = std::strtof(line_ptr, &line_ptr);
+            #endif
         }
     });
 

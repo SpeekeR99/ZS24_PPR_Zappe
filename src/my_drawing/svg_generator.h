@@ -7,11 +7,11 @@
 #include "utils/utils.h"
 
 /** Padding for the plot */
-constexpr size_t padding = 50;
+constexpr size_t padding = 100;
 /** Canvas width */
-constexpr size_t canvas_width = 800;
+constexpr size_t canvas_width = 900;
 /** Canvas height */
-constexpr size_t canvas_height = 600;
+constexpr size_t canvas_height = 700;
 /** Plot area width */
 constexpr size_t plot_width = canvas_width - 2 * padding;
 /** Plot area height */

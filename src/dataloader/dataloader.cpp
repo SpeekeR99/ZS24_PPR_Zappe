@@ -115,6 +115,7 @@ void load_data_super_fast(const std::string& filepath, patient_data &data) {
         line_ptr++; /* Skip comma */
 
         /* Parse x, y, z values directly */
+        #ifndef _USE_FLOAT
         x = std::strtod(line_ptr, &line_ptr);
         line_ptr++; /* Skip comma */
 
@@ -122,6 +123,15 @@ void load_data_super_fast(const std::string& filepath, patient_data &data) {
         line_ptr++; /* Skip comma */
 
         z = std::strtod(line_ptr, &line_ptr);
+        #else
+        x = std::strtof(line_ptr, &line_ptr);
+        line_ptr++; /* Skip comma */
+
+        y = std::strtof(line_ptr, &line_ptr);
+        line_ptr++; /* Skip comma */
+
+        z = std::strtof(line_ptr, &line_ptr);
+        #endif
 
         /* Ensure we have enough space */
         if (index >= data.x.size()) {

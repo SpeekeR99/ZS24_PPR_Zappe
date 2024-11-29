@@ -52,6 +52,13 @@ std::vector<std::string> get_files(std::map<std::string, std::string> &args) {
     else
         files.push_back(filepath);
 
+    /* Check if the files really exist -- cannot trust the user */
+    for (const auto &file : files)
+        if (!std::filesystem::exists(file)) {
+            std::cerr << "File " << file << " does not exist!" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
     return files;
 }
 
@@ -144,14 +151,14 @@ void execute_computations_for_repetitions(
              * Actual computation -- uses the variant and the visitor pattern
              * (mimics dynamic polymorphism, but with no runtime overhead)
              */
-            auto mad = std::visit([&](auto &&comp) -> decimal {
-                return std::visit([&](auto &&exec) -> decimal {
-                    return comp.compute_mad(exec, vectors[j]);
-                }, policy);
-            }, comp);
             auto coef_var = std::visit([&](auto &&comp) -> decimal {
                 return std::visit([&](auto &&exec) -> decimal {
-                    return comp.compute_coef_var(exec, vectors[j]);
+                    return comp.compute_coef_var(exec, vectors[j]);  /* Order matters for CPU -> GPU data transfer */
+                }, policy);
+            }, comp);
+            auto mad = std::visit([&](auto &&comp) -> decimal {
+                return std::visit([&](auto &&exec) -> decimal {
+                    return comp.compute_mad(exec, vectors[j]);  /* Order matters -- this modifies the original array */
                 }, policy);
             }, comp);
 

@@ -73,6 +73,7 @@ void render_line_chart(
         tick_label_x << x_tick_value;
         drawing::Text x_tick_label(x, canvas_height - padding + 20, tick_label_x.str());
         x_tick_label.Set_Anchor(drawing::Text::TextAnchor::MIDDLE);
+        x_tick_label.Set_Transform("rotate(-12.5, " + std::to_string(x) + ", " + std::to_string(canvas_height - padding + 20) + ")");
         renderer.Render_Text(x_tick_label);
 
         /* Horizontal grid lines and Y ticks */
@@ -123,17 +124,17 @@ void render_line_chart(
     }
 
     /* Draw axis labels */
-    drawing::Text x_axis_label(canvas_width / 2., canvas_height - 20, x_label);
+    drawing::Text x_axis_label(canvas_width / 2., canvas_height - padding / 4., x_label);
     x_axis_label.Set_Anchor(drawing::Text::TextAnchor::MIDDLE);
     renderer.Render_Text(x_axis_label);
 
-    drawing::Text y_axis_label(20, canvas_height / 2. - 10, y_label);
+    drawing::Text y_axis_label(20, canvas_height / 2. - padding / 4., y_label);
     y_axis_label.Set_Anchor(drawing::Text::TextAnchor::MIDDLE);
     y_axis_label.Set_Transform("rotate(-90, 20, " + std::to_string(canvas_height / 2) + ")");
     renderer.Render_Text(y_axis_label);
 
     /* Draw title */
-    drawing::Text chart_title(canvas_width / 2., padding - 10, title);
+    drawing::Text chart_title(canvas_width / 2., padding - padding / 4., title);
     chart_title.Set_Anchor(drawing::Text::TextAnchor::MIDDLE);
     chart_title.Set_Font_Weight(drawing::Text::FontWeight::BOLD);
     renderer.Render_Text(chart_title);

@@ -33,6 +33,8 @@ private:
     cl::CommandQueue queue;
     /** OpenCL Program */
     cl::Program program;
+    /** OpenCL Buffer for input data -- here for one-time CPU -> GPU transfer */
+    cl::Buffer input_buffer;
 
 public:
     /**
@@ -63,14 +65,13 @@ public:
         const auto n = arr.size();
 
         /* Create buffers */
-        cl::Buffer buffer_arr(this->context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * n, arr.data());
         cl::Buffer buffer_temp(this->context, CL_MEM_READ_WRITE, sizeof(decimal) * n);
 
         /* Prepare kernel */
         cl::Kernel kernel_merge_sort(this->program, "merge");
 
         /* Set kernel persistent arguments */
-        kernel_merge_sort.setArg(0, buffer_arr);
+        kernel_merge_sort.setArg(0, this->input_buffer);  /* Use the input buffer -- it should be set by the sums function */
         kernel_merge_sort.setArg(1, buffer_temp);
         kernel_merge_sort.setArg(3, static_cast<int>(n));
 
@@ -90,9 +91,7 @@ public:
         }
 
         /* Read result */
-        this->queue.enqueueReadBuffer(buffer_arr, CL_TRUE, 0, sizeof(decimal) * n, arr.data());
-
-        std::cout << ((std::is_sorted(arr.begin(), arr.end())) ? "Sorted" : "NOT SORTED!") << std::endl;
+        this->queue.enqueueReadBuffer(this->input_buffer, CL_TRUE, 0, sizeof(decimal) * n, arr.data());
     }
 
     /**
@@ -112,12 +111,11 @@ public:
         const auto n = arr.size();
 
         /* Create buffers */
-        cl::Buffer buffer_arr(this->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * n, const_cast<decimal *>(arr.data()));
         cl::Buffer buffer_diff(this->context, CL_MEM_WRITE_ONLY, sizeof(decimal) * n);
 
         /* Prepare kernel and arguments */
         cl::Kernel kernel(this->program, "abs_diff");
-        kernel.setArg(0, buffer_arr);
+        kernel.setArg(0, this->input_buffer);  /* Use the input buffer -- it should be set by the sums function */
         kernel.setArg(1, buffer_diff);
         kernel.setArg(2, median);
 
@@ -150,13 +148,14 @@ public:
         std::vector<decimal> sums_sq((n + local_size - 1) / local_size);
 
         /* Create buffers */
-        cl::Buffer buffer_arr(this->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * n, const_cast<decimal *>(arr.data()));
+        /* Copy the array to the GPU once and keep it there */
+        this->input_buffer = cl::Buffer(this->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * n, const_cast<decimal *>(arr.data()));
         cl::Buffer buffer_sums(this->context, CL_MEM_WRITE_ONLY, sizeof(decimal) * sums.size());
         cl::Buffer buffer_sums_sq(this->context, CL_MEM_WRITE_ONLY, sizeof(decimal) * sums_sq.size());
 
         /* Prepare kernel and arguments */
         cl::Kernel kernel(this->program, "reduce_sum");
-        kernel.setArg(0, buffer_arr);
+        kernel.setArg(0, this->input_buffer);  /* This function creates the input buffer -- order matters (CV -> MAD) */
         kernel.setArg(1, buffer_sums);
         kernel.setArg(2, buffer_sums_sq);
         kernel.setArg(3, static_cast<int>(n));
