@@ -206,12 +206,15 @@ void execute_computations_for_repetitions(
  * @param batches Batches for the X axis
  * @param all All policy combinations used (--all flag)
  */
-void plot_results(const std::vector<double> &results, const std::vector<double> &batches, const std::vector<std::string> &files, bool all) {
+void plot_results(const std::vector<double> &results, std::vector<double> &batches, const std::vector<std::string> &files, bool all) {
     std::cout << "Plotting the results..." << std::endl;
 
     /* Prepare res directory for the plots, if it does not exist */
     if (!std::filesystem::exists("res"))
         std::filesystem::create_directory("res");
+
+    /* Batches for the X axis are wrong if -d flag was used */
+    batches.resize(batches.size() / files.size());
 
     /* Plot the results for each file */
     for (size_t i = 0; i < files.size(); i++) {
@@ -225,7 +228,7 @@ void plot_results(const std::vector<double> &results, const std::vector<double> 
             std::vector<std::vector<std::vector<double>>> mads(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
             std::vector<std::vector<std::vector<double>>> cvs(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
             std::vector<std::vector<std::vector<double>>> times(labels.size(), std::vector<std::vector<double>>(sub_labels.size()));
-            for (size_t j = i * results.size() / files.size(), k = 0; j < results.size() / files.size(); j += sub_labels.size() * 3, k = ++k % labels.size()) {
+            for (size_t j = i * results.size() / files.size(), k = 0; j < (i + 1) * results.size() / files.size(); j += sub_labels.size() * 3, k = ++k % labels.size()) {
                 for (size_t l = 0; l < sub_labels.size(); l++) {
                     mads[k][l].emplace_back(results[j + l * 3]);
                     cvs[k][l].emplace_back(results[j + l * 3 + 1]);
@@ -288,7 +291,7 @@ void plot_results(const std::vector<double> &results, const std::vector<double> 
             std::vector<std::vector<double>> mads(labels.size());
             std::vector<std::vector<double>> cvs(labels.size());
             std::vector<std::vector<double>> times(labels.size());
-            for (size_t j = i * results.size() / files.size(), k = 0; j < results.size() / files.size(); j += labels.size(), k = ++k % labels.size()) {
+            for (size_t j = i * results.size() / files.size(), k = 0; j < (i + 1) * results.size() / files.size(); j += labels.size(), k = ++k % labels.size()) {
                 mads[k].emplace_back(results[j]);
                 cvs[k].emplace_back(results[j + 1]);
                 times[k].emplace_back(results[j + 2]);
@@ -303,9 +306,11 @@ void plot_results(const std::vector<double> &results, const std::vector<double> 
             const auto today = oss.str();
 
             std::string file = files[i];
-            /* Take last token after "/" */
+            /* Take last token after "/" (or "\") */
             if (file.find('/') != std::string::npos)
                 file = file.substr(file.find_last_of('/') + 1);
+            if (file.find('\\') != std::string::npos)
+                file = file.substr(file.find_last_of('\\') + 1);
             /* Throw away the extension */
             if (file.find('.') != std::string::npos)
                 file = file.substr(0, file.find('.'));
