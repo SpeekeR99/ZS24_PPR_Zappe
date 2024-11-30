@@ -388,7 +388,7 @@ void execute_computations(
 
         /* For each split chunk (batch) of the loaded data */
         for (size_t i = 0; i < num_batches; i++) {
-            const auto num_data_points = data.x.size() / num_batches * (i + 1);
+            const auto num_data_points = i != num_batches - 1 ? data.x.size() / num_batches * (i + 1) : data.x.size();
             batches.emplace_back(static_cast<double>(num_data_points));
             std::cout << "Using " << num_data_points << " data points for computation..." << std::endl << std::endl;
 
