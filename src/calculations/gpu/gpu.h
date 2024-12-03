@@ -9,7 +9,52 @@
 #ifndef _USE_FLOAT
 constexpr char kernel_source[] = R"(
 /**
+ * Bitonic sort kernel
+ * Uses sorting network to sort the array
+ * @param arr Input array
+ * @param stage Current stage
+ * @param pass Current pass of the stage
+ */
+__kernel void bitonic_sort(__global double *arr, const uint stage, const uint pass) {
+    /* Get index */
+    int gid = get_global_id(0);
+
+    /* Calculate pair distance and block width */
+    uint pair_distance = 1 << (stage - pass);
+    uint block_width = 2 * pair_distance;
+
+    /* Calculate left and right indices */
+    uint left_id = (gid & (pair_distance - 1)) + (gid >> (stage - pass)) * block_width;
+    uint right_id = left_id + pair_distance;
+
+    /* Load elements */
+    double left = arr[left_id];
+    double right = arr[right_id];
+
+    /* Determine the direction */
+    uint same_dir_block_width = gid >> stage;
+    uint same_dir = same_dir_block_width & 0x1;
+
+    /* Sort elements */
+    if (same_dir) {
+        uint temp = right_id;
+        right_id = left_id;
+        left_id = temp;
+    }
+
+    /* Write back -- swap if necessary */
+    if (left < right) {
+        arr[left_id] = left;
+        arr[right_id] = right;
+    } else {
+        arr[left_id] = right;
+        arr[right_id] = left;
+    }
+}
+
+/**
  * Merge two sorted sub-arrays
+ * UNUSED because it was slow (13.5 seconds) -- replaced by above bitonic_sort
  * @param arr Array to be sorted
  * @param temp Temporary array
  * @param size Sub-array size (stride)
@@ -112,7 +157,52 @@ __kernel void reduce_sum(__global const double *arr, __global double *sums, __gl
 #else
 constexpr char kernel_source[] = R"(
 /**
+ * Bitonic sort kernel
+ * Uses sorting network to sort the array
+ * @param arr Input array
+ * @param stage Current stage
+ * @param pass Current pass of the stage
+ */
+__kernel void bitonic_sort(__global float *arr, const uint stage, const uint pass) {
+    /* Get index */
+    int gid = get_global_id(0);
+
+    /* Calculate pair distance and block width */
+    uint pair_distance = 1 << (stage - pass);
+    uint block_width = 2 * pair_distance;
+
+    /* Calculate left and right indices */
+    uint left_id = (gid & (pair_distance - 1)) + (gid >> (stage - pass)) * block_width;
+    uint right_id = left_id + pair_distance;
+
+    /* Load elements */
+    float left = arr[left_id];
+    float right = arr[right_id];
+
+    /* Determine the direction */
+    uint same_dir_block_width = gid >> stage;
+    uint same_dir = same_dir_block_width & 0x1;
+
+    /* Sort elements */
+    if (same_dir) {
+        uint temp = right_id;
+        right_id = left_id;
+        left_id = temp;
+    }
+
+    /* Write back -- swap if necessary */
+    if (left < right) {
+        arr[left_id] = left;
+        arr[right_id] = right;
+    } else {
+        arr[left_id] = right;
+        arr[right_id] = left;
+    }
+}
+
+/**
  * Merge two sorted sub-arrays
+ * UNUSED because it was slow (13.5 seconds) -- replaced by above bitonic_sort
  * @param arr Array to be sorted
  * @param temp Temporary array
  * @param size Sub-array size (stride)

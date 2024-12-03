@@ -11,6 +11,13 @@
 
 #include <execution>
 
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
+
 /* This, and the arg parser, are the only files where I found OOP to be useful */
 
 /** Local size for the sum reduce kernel */
@@ -64,34 +71,80 @@ public:
 
         const auto n = arr.size();
 
+        /* Pad the array to the next power of 2 */
+        size_t pow = 1, num_stages = 0;
+        while (pow < n) {
+            pow <<= 1;
+            num_stages++;
+        }
+        arr.resize(pow, std::numeric_limits<decimal>::max());
+
         /* Create buffers */
-        cl::Buffer buffer_temp(this->context, CL_MEM_READ_WRITE, sizeof(decimal) * n);
+        this->input_buffer = cl::Buffer(this->context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * pow, arr.data());
 
         /* Prepare kernel */
-        cl::Kernel kernel_merge_sort(this->program, "merge");
+        cl::Kernel bitonic_sort_kernel(program, "bitonic_sort");
+        bitonic_sort_kernel.setArg(0, this->input_buffer);
 
-        /* Set kernel persistent arguments */
-        kernel_merge_sort.setArg(0, this->input_buffer);  /* Use the input buffer -- it should be set by the sums function */
-        kernel_merge_sort.setArg(1, buffer_temp);
-        kernel_merge_sort.setArg(3, static_cast<int>(n));
+        /* Global size */
+        size_t global_size = (pow / 2 + local_size - 1) / local_size * local_size;
 
-        /* Iterate over the array with increasing sub-array sizes (stride) */
-        for (size_t size = 1; size < arr.size(); size *= 2) {
-            kernel_merge_sort.setArg(2, static_cast<int>(size));
+        /* Iterate over stages */
+        for (size_t stage = 0; stage < num_stages; stage++) {
+            /* Set stage */
+            bitonic_sort_kernel.setArg(1, static_cast<int>(stage));
 
-            /* Calculate number of sub-arrays */
-            const size_t num_sub_arrays = (n + 2 * size - 1) / (2 * size);
+            /* Iterate over sub-stages */
+            for (size_t pass = 0; pass < stage + 1; pass++) {
+                /* Set pass */
+                bitonic_sort_kernel.setArg(2, static_cast<int>(pass));
 
-            /* Adjust global size */
-            const size_t global_size = ((num_sub_arrays + local_size - 1) / local_size) * local_size;
-
-            /* Execute kernel */
-            this->queue.enqueueNDRangeKernel(kernel_merge_sort, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
-            this->queue.finish();
+                /* Execute kernel */
+                this->queue.enqueueNDRangeKernel(bitonic_sort_kernel, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
+                this->queue.finish();
+            }
         }
 
         /* Read result */
-        this->queue.enqueueReadBuffer(this->input_buffer, CL_TRUE, 0, sizeof(decimal) * n, arr.data());
+        this->queue.enqueueReadBuffer(this->input_buffer, CL_TRUE, 0, sizeof(decimal) * pow, arr.data());
+
+        /* Resize back to the original size */
+        arr.resize(n);
+
+        /* Following code is for the original merge sort kernel, which was really slow (13.5 seconds) */
+
+//        (void) policy;  /* Supress warning about unused policy */
+//
+//        const auto n = arr.size();
+//
+//        /* Create buffers */
+//        cl::Buffer buffer_temp(this->context, CL_MEM_READ_WRITE, sizeof(decimal) * n);
+//
+//        /* Prepare kernel */
+//        cl::Kernel kernel_merge_sort(this->program, "merge");
+//
+//        /* Set kernel persistent arguments */
+//        kernel_merge_sort.setArg(0, this->input_buffer);  /* Use the input buffer -- it should be set by the sums function */
+//        kernel_merge_sort.setArg(1, buffer_temp);
+//        kernel_merge_sort.setArg(3, static_cast<int>(n));
+//
+//        /* Iterate over the array with increasing sub-array sizes (stride) */
+//        for (size_t size = 1; size < arr.size(); size *= 2) {
+//            kernel_merge_sort.setArg(2, static_cast<int>(size));
+//
+//            /* Calculate number of sub-arrays */
+//            const size_t num_sub_arrays = (n + 2 * size - 1) / (2 * size);
+//
+//            /* Adjust global size */
+//            const size_t global_size = ((num_sub_arrays + local_size - 1) / local_size) * local_size;
+//
+//            /* Execute kernel */
+//            this->queue.enqueueNDRangeKernel(kernel_merge_sort, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
+//            this->queue.finish();
+//        }
+//
+//        /* Read result */
+//        this->queue.enqueueReadBuffer(this->input_buffer, CL_TRUE, 0, sizeof(decimal) * n, arr.data());
     }
 
     /**
