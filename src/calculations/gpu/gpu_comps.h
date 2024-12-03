@@ -79,7 +79,7 @@ public:
         }
         arr.resize(pow, std::numeric_limits<decimal>::max());
 
-        /* Create buffers */
+        /* Create buffers -- input buffer is set by the sums function, but we need padded array here */
         this->input_buffer = cl::Buffer(this->context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(decimal) * pow, arr.data());
 
         /* Prepare kernel */
@@ -168,7 +168,7 @@ public:
 
         /* Prepare kernel and arguments */
         cl::Kernel kernel(this->program, "my_abs_diff");
-        kernel.setArg(0, this->input_buffer);  /* Use the input buffer -- it should be set by the sums function */
+        kernel.setArg(0, this->input_buffer);  /* Use the input buffer -- it should be set by the sort function */
         kernel.setArg(1, buffer_diff);
         kernel.setArg(2, median);
 
