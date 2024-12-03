@@ -114,7 +114,7 @@ public:
         cl::Buffer buffer_diff(this->context, CL_MEM_WRITE_ONLY, sizeof(decimal) * n);
 
         /* Prepare kernel and arguments */
-        cl::Kernel kernel(this->program, "abs_diff");
+        cl::Kernel kernel(this->program, "my_abs_diff");
         kernel.setArg(0, this->input_buffer);  /* Use the input buffer -- it should be set by the sums function */
         kernel.setArg(1, buffer_diff);
         kernel.setArg(2, median);

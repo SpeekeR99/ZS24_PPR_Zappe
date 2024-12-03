@@ -53,11 +53,12 @@ __kernel void merge(__global double *arr, __global double *temp, const int size,
 
 /**
  * Compute absolute difference between each element and the median
+ * "my_" prefix, because for my integrated AMD GPU, "abs_diff" was already defined
  * @param arr Array
  * @param diff Absolute difference between each element and the median
  * @param median Median of the array
  */
-__kernel void abs_diff(__global const double *arr, __global double *diff, const double median) {
+__kernel void my_abs_diff(__global const double *arr, __global double *diff, const double median) {
     /* Get index */
     int i = get_global_id(0);
     /* Compute absolute difference */
@@ -155,11 +156,12 @@ __kernel void merge(__global float *arr, __global float *temp, const int size, c
 
 /**
  * Compute absolute difference between each element and the median
+ * "my_" prefix, because for my integrated AMD GPU, "abs_diff" was already defined
  * @param arr Array
  * @param diff Absolute difference between each element and the median
  * @param median Median of the array
  */
-__kernel void abs_diff(__global const float *arr, __global float *diff, const float median) {
+__kernel void my_abs_diff(__global const float *arr, __global float *diff, const float median) {
     /* Get index */
     int i = get_global_id(0);
     /* Compute absolute difference */
