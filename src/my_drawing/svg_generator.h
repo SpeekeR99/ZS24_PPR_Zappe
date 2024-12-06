@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
 
 #include "drawing/SVGRenderer.h"
 #include "utils/utils.h"

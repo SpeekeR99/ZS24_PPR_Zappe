@@ -70,7 +70,7 @@ void render_line_chart(
         /* X tick labels */
         double x_tick_value = x_min + (static_cast<double>(i) / double(num_ticks)) * (x_max - x_min);
         std::ostringstream tick_label_x;
-        tick_label_x << x_tick_value;
+        tick_label_x << std::setprecision(2) << x_tick_value;
         drawing::Text x_tick_label(x, canvas_height - padding + 20, tick_label_x.str());
         x_tick_label.Set_Anchor(drawing::Text::TextAnchor::MIDDLE);
         x_tick_label.Set_Transform("rotate(-12.5, " + std::to_string(x) + ", " + std::to_string(canvas_height - padding + 20) + ")");
